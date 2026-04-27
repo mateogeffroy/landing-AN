@@ -62,8 +62,8 @@ export default function Home() {
             {/* Member 3 */}
             <div className="bg-slate-700/30 rounded-lg p-6 border border-slate-600/50">
               <h3 className="text-lg font-bold text-white mb-2">Geronimo Garrote</h3>
-              <p className="text-slate-400 text-sm mb-1"><span className="text-blue-400 font-semibold">Legajo:</span> XXXXXX</p>
-              <p className="text-slate-400 text-sm"><span className="text-blue-400 font-semibold">Email:</span> nombre@ejemplo.com</p>
+              <p className="text-slate-400 text-sm mb-1"><span className="text-blue-400 font-semibold">Legajo:</span> 33.277</p>
+              <p className="text-slate-400 text-sm"><span className="text-blue-400 font-semibold">Email:</span> garrote.gero@gmail.com</p>
             </div>
             {/* Member 4 */}
             <div className="bg-slate-700/30 rounded-lg p-6 border border-slate-600/50">
