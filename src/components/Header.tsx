@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Logo from './Logo';
 
 export default function Header() {
   const [isVisible, setIsVisible] = useState(true);
@@ -9,14 +10,11 @@ export default function Header() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-
-      // Si bajamos y pasamos los 50px, ocultamos el header. Si subimos, lo mostramos.
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
         setIsVisible(false);
       } else {
         setIsVisible(true);
       }
-
       setLastScrollY(currentScrollY);
     };
 
@@ -34,21 +32,15 @@ export default function Header() {
         <div className="flex items-center justify-between">
           <a href="/">
             <div className="flex items-center space-x-2">
-                <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 text-transparent bg-clip-text">∑</div>
-                <h1 className="text-xl font-bold text-white">Análisis Numérico</h1>
+                <Logo className="w-7 h-7" />
+                <h1 className="text-xl font-bold text-white">Portfolio TPs AN</h1>
             </div>
           </a>
           <nav className="hidden md:flex space-x-8">
-            <a
-              href="/#proyectos"
-              className="text-slate-300 hover:text-blue-400 transition"
-            >
+            <a href="/#proyectos" className="text-slate-300 hover:text-blue-400 transition text-sm font-medium">
               Proyectos
             </a>
-            <a
-              href="/#integrantes"
-              className="text-slate-300 hover:text-blue-400 transition"
-            >
+            <a href="/#integrantes" className="text-slate-300 hover:text-blue-400 transition text-sm font-medium">
               Integrantes
             </a>
           </nav>

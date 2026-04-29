@@ -40,7 +40,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "src/components/EditorFuncionTrozos.tsx"  ],
   "exclude": [
     "node_modules"
   ]

@@ -29,3 +29,14 @@ body {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
 }
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
