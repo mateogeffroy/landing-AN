@@ -80,13 +80,13 @@ export default function VisualizadorCoeficientes({ a0, an, bn, armonicos }: Prop
         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4 text-center">Fórmulas de Cálculo de Coeficientes</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-slate-300">
           <div className="bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-700/50 overflow-x-auto shadow-inner">
-            <KaTeX expresionTex={String.raw`a_0 = \frac{2}{T}\cdot\int_{-L}^{+L}f(t)\cdot dt`} enBloque={true} />
+            <KaTeX expresionTex={String.raw`a_0 = \frac{2}{T}\cdot\int_{T}f(t)\cdot dt`} enBloque={true} />
           </div>
           <div className="bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-700/50 overflow-x-auto shadow-inner">
-            <KaTeX expresionTex={String.raw`a_n = \frac{2}{T}\cdot\int_{-L}^{+L}f(t)\cdot \cos(n\omega t)\cdot dt`} enBloque={true} />
+            <KaTeX expresionTex={String.raw`a_n = \frac{2}{T}\cdot\int_{T}f(t)\cdot \cos(n\omega t)\cdot dt`} enBloque={true} />
           </div>
           <div className="bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-700/50 overflow-x-auto shadow-inner">
-            <KaTeX expresionTex={String.raw`b_n = \frac{2}{T}\cdot\int_{-L}^{+L}f(t)\cdot \sin(n\omega t)\cdot dt`} enBloque={true} />
+            <KaTeX expresionTex={String.raw`b_n = \frac{2}{T}\cdot\int_{T}f(t)\cdot \sin(n\omega t)\cdot dt`} enBloque={true} />
           </div>
         </div>
       </div>

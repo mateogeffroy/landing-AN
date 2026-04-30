@@ -1,10 +1,10 @@
-# 📐 Análisis Numérico — Portfolio de Trabajos Prácticos
+# Análisis Numérico — Portfolio de Trabajos Prácticos
 
-Una colección de proyectos de los trabajos prácticos opcionales de la materia **Análisis Numérico** — UTN FRLP.
+Una colección de proyectos de los trabajos prácticos opcionales de la materia **Análisis Numérico — UTN FRLP**.
 
 ---
 
-## 👥 Integrantes
+## Integrantes
 
 | Nombre | Legajo | Email |
 |---|---|---|
@@ -15,13 +15,42 @@ Una colección de proyectos de los trabajos prácticos opcionales de la materia 
 
 ---
 
-## 🛠️ Stack del Proyecto
+## Stack del Proyecto
 
 | Tecnología | Descripción |
 |---|---|
 | [Next.js 14](https://nextjs.org/) | Framework React con App Router |
 | [TypeScript](https://www.typescriptlang.org/) | Tipado estático |
 | [Tailwind CSS](https://tailwindcss.com/) | Estilos utility-first |
+
+---
+
+## 🚀 Instalación y uso local
+
+**Requisitos previos:** Node.js 18+ y npm (o yarn).
+
+1. **Cloná el repositorio:**
+```bash
+git clone https://github.com/mateogeffroy/landing-AN.git
+cd landing-AN
+```
+
+2. **Instalá las dependencias:**
+```bash
+npm install
+```
+
+3. **Levantá el servidor de desarrollo:**
+```bash
+npm run dev
+```
+Abrí [http://localhost:3000](http://localhost:3000) en tu navegador.
+
+4. **Para compilar y correr en producción:**
+```bash
+npm run build
+npm start
+```
 
 ---
 
@@ -55,24 +84,24 @@ Una colección de proyectos de los trabajos prácticos opcionales de la materia 
 Una **Serie de Fourier** permite representar una función periódica $f(t)$ de período $T$ como una suma infinita de funciones seno y coseno:
 
 $$
-f(t) = \frac{a_0}{2} + \sum_{n=1}^{N} \left[ a_n \cos\left(\frac{2\pi n t}{T}\right) + b_n \sin\left(\frac{2\pi n t}{T}\right) \right]
+f(t) = \frac{a_0}{2} + \sum_{n=1}^{N} \left[ a_n\cdot \cos(n\omega t) + b_n\cdot \sin(n\omega t) \right]
 $$
 
 donde los **coeficientes de Fourier** se calculan como:
 
 $$
-a_0 = \frac{2}{T} \int_{0}^{T} f(t) \, dt
+a_0 = \frac{2}{T}\cdot \int_{T} f(t) \, dt
 $$
 
 $$
-a_n = \frac{2}{T} \int_{0}^{T} f(t) \cos\left(\frac{2\pi n t}{T}\right) dt
+a_n = \frac{2}{T}\cdot \int_{T} f(t)\cdot \cos(n\omega t)\cdot dt
 $$
 
 $$
-b_n = \frac{2}{T} \int_{0}^{T} f(t) \sin\left(\frac{2\pi n t}{T}\right) dt
+b_n = \frac{2}{T}\cdot \int_{T} f(t)\cdot \sin(n\omega t)\cdot dt
 $$
 
-> A mayor cantidad de armónicos $N$, mejor es la aproximación a la función original. Este fenómeno se conoce como **convergencia de la serie**.
+> Cuando la cantidad de armónicos $N$ tiende a $\infty$ mejor es la aproximación a la función original. Este fenómeno se conoce como **convergencia de la serie**.
 
 ---
 
@@ -90,15 +119,4 @@ El cálculo numérico de los coeficientes se realiza mediante **integración num
 
 ---
 
-#### Funciones de ejemplo soportadas
-
-| Función | Expresión ingresable |
-|---|---|
-| Onda cuadrada | `x < T/2 ? 1 : -1` |
-| Onda triangular | `abs(x - T/2)` |
-| Diente de sierra | `x / T` |
-| Función personalizada | Cualquier expresión válida de `Math.js` |
-
----
-
-*Los proyectos se irán actualizando a medida que se completen los trabajos prácticos.*
+*Los proyectos se irán actualizando en este repositorio a medida que se completen los trabajos prácticos.*
