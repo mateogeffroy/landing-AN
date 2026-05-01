@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-slate-500 text-sm">
-            © {currentYear} Análisis Numérico - Buscaglia, Coria, Geffroy, Garrote.
+            © {currentYear} Análisis Numérico - Buscaglia, Garrote, Geffroy.
           </p>
         </div>
       </div>

@@ -8,10 +8,9 @@ Una colección de proyectos de los trabajos prácticos opcionales de la materia 
 
 | Nombre | Legajo | Email |
 |---|---|---|
-| Mateo Arturo Geffroy | 32.027 | mateogeffroy@gmail.com |
 | Francisco Nicolás Buscaglia | 32.308 | francisconicolasbuscaglia@alu.frlp.utn.edu.ar |
 | Gerónimo Garrote | 33.277 | garrote.gero@gmail.com |
-| Nicolás Martín Coria | 32.635 | nicolasmartincoria@alu.frlp.utn.edu.ar |
+| Mateo Arturo Geffroy | 32.027 | mateogeffroy@gmail.com |
 
 ---
 
