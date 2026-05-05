@@ -64,19 +64,25 @@ export default function Home() {
             
             {/* Member 1 */}
             <div className="bg-slate-800/80 hover:bg-slate-800 rounded-xl p-6 border border-slate-700 transition-colors shadow-inner">
-              <h3 className="text-lg font-bold text-white mb-2">Francisco Nicolas Buscaglia</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Buscaglia, Francisco Nicolás</h3>
               <p className="text-slate-400 text-sm mb-1"><span className="text-blue-400 font-semibold">Legajo:</span> 32.308</p>
               <p className="text-slate-400 text-sm"><span className="text-blue-400 font-semibold">Email:</span> francisconicolasbuscaglia@alu.frlp.utn.edu.ar</p>
             </div>
             {/* Member 2 */}
             <div className="bg-slate-800/80 hover:bg-slate-800 rounded-xl p-6 border border-slate-700 transition-colors shadow-inner">
-              <h3 className="text-lg font-bold text-white mb-2">Geronimo Garrote</h3>
-              <p className="text-slate-400 text-sm mb-1"><span className="text-blue-400 font-semibold">Legajo:</span> 33.277</p>
-              <p className="text-slate-400 text-sm"><span className="text-blue-400 font-semibold">Email:</span> garrote.gero@gmail.com</p>
+              <h3 className="text-lg font-bold text-white mb-2">Coria, Nicolás Martín</h3>
+              <p className="text-slate-400 text-sm mb-1"><span className="text-blue-400 font-semibold">Legajo:</span> 32.635</p>
+              <p className="text-slate-400 text-sm"><span className="text-blue-400 font-semibold">Email:</span> nicolasmartincoria@alu.frlp.utn.edu.ar</p>
             </div>
             {/* Member 3 */}
             <div className="bg-slate-800/80 hover:bg-slate-800 rounded-xl p-6 border border-slate-700 transition-colors shadow-inner">
-              <h3 className="text-lg font-bold text-white mb-2">Mateo Arturo Geffroy</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Garrote, Gerónimo</h3>
+              <p className="text-slate-400 text-sm mb-1"><span className="text-blue-400 font-semibold">Legajo:</span> 33.277</p>
+              <p className="text-slate-400 text-sm"><span className="text-blue-400 font-semibold">Email:</span> garrote.gero@gmail.com</p>
+            </div>
+            {/* Member 4 */}
+            <div className="bg-slate-800/80 hover:bg-slate-800 rounded-xl p-6 border border-slate-700 transition-colors shadow-inner">
+              <h3 className="text-lg font-bold text-white mb-2">Geffroy, Mateo Arturo</h3>
               <p className="text-slate-400 text-sm mb-1"><span className="text-blue-400 font-semibold">Legajo:</span> 32.027</p>
               <p className="text-slate-400 text-sm"><span className="text-blue-400 font-semibold">Email:</span> mateogeffroy@gmail.com</p>
             </div>
