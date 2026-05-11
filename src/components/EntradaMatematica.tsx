@@ -94,6 +94,7 @@ export default function EntradaMatematica({
         campoMatematico.removeEventListener('focusin', manejarFoco);
       };
     }
+    return undefined;
   }, [estaMontado, alCambiarMatematica]);
 
   // 3. Sincronizador de estado EXTERNO (Cuando seleccionas una precargada)
