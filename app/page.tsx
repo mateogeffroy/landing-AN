@@ -12,6 +12,13 @@ const projects = [
     link: '/fourier',
     tags: ['Recharts', 'mathjs', 'html2canvas'],
   },
+  {
+    title: 'Primera exposición grupal: Método directo de Crout (L*U)',
+    description: 'Desarrollo teórico y práctico del método de factorización LU (Crout) para la resolución de sistemas de ecuaciones lineales. Incluye explicación del algoritmo, fórmulas y ejercicios resueltos paso a paso.',
+    icon: '⊞',
+    link: '/crout',
+    tags: ['Álgebra Lineal', 'React', 'Ecuaciones'],
+  },
 ];
 
 export default function Home() {
