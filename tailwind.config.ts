@@ -11,6 +11,9 @@ export default {
         primary: '#1f2937',
         secondary: '#3b82f6',
       },
+      fontFamily: {
+        serif: ['var(--font-libro)', 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
+      },
     },
   },
   plugins: [],
