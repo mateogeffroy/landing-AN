@@ -10,6 +10,37 @@ import EditorFuncionTrozos, { TramoFuncion } from '@/src/components/EditorFuncio
 import MenuDesplegableEjercicios, { EjercicioPredefinido } from '@/src/components/MenuDesplegableEjercicios';
 import EntradaMatematica from '@/src/components/EntradaMatematica';
 import KaTeX from '@/src/components/KaTeX';
+import RevelarAlEntrar from '@/src/components/RevelarAlEntrar';
+import GlifoMatriz from '@/src/components/GlifoMatriz';
+import { desplazarHaciaAncla } from '@/src/lib/lenis';
+
+const PATRON_SEMILLA = [
+  [false, false, false],
+  [false, true, false],
+  [false, false, false],
+];
+const PATRON_ONDA = [
+  [true, false, false],
+  [false, true, false],
+  [false, false, true],
+];
+const PATRON_COLUMNAS = [
+  [true, true, false],
+  [true, true, false],
+  [true, true, false],
+];
+const PATRON_DENSO = [
+  [true, true, true],
+  [true, true, true],
+  [true, true, true],
+];
+
+const navegacion = [
+  { href: '#definicion', label: '1. Definición', patron: PATRON_SEMILLA },
+  { href: '#grafico', label: '2. Gráfico', patron: PATRON_ONDA },
+  { href: '#coeficientes', label: '3. Coeficientes', patron: PATRON_COLUMNAS },
+  { href: '#aproximacion', label: '4. Aproximación', patron: PATRON_DENSO },
+];
 
 //Definicion de la estructura de los coeficientes de Fourier
 interface CoeficientesFourier { 
@@ -267,10 +298,10 @@ export default function PaginaFourier() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-[#0f172a]">
+    <main className="min-h-screen flex flex-col fondo-cuadriculado">
       <Header />
-      <section className="flex-1 max-w-5xl mx-auto px-4 py-24 w-full space-y-8">
-        
+      <section className="flex-1 max-w-6xl mx-auto px-4 py-24 w-full">
+
         <div className="text-center mb-6">
           <h1 className="text-4xl md:text-[3.5rem] font-extrabold mb-4 bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 text-transparent bg-clip-text leading-tight">
             Calculadora de Serie de Fourier
@@ -278,7 +309,30 @@ export default function PaginaFourier() {
           <p className="text-slate-400 font-medium tracking-tight">Análisis Numérico · UTN FRLP</p>
         </div>
 
-        <div className="bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl space-y-6">
+        {/* CUERPO: guía lateral + contenido */}
+        <div className="grid grid-cols-1 lg:grid-cols-[9rem_1fr] gap-4 lg:gap-10 mt-10">
+
+          {/* GUÍA LATERAL (sólo desktop) */}
+          <nav className="hidden lg:flex flex-col gap-8 sticky top-32 self-start h-fit pr-2 border-r border-slate-800">
+            {navegacion.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={(evento) => desplazarHaciaAncla(evento, item.href)}
+                className="group flex items-center gap-3 text-slate-500 hover:text-slate-200 transition-colors"
+              >
+                <GlifoMatriz celdas={item.patron} className="text-slate-600 group-hover:text-blue-400 transition-colors shrink-0" />
+                <span className="text-[10px] font-black uppercase tracking-widest leading-tight">
+                  {item.label}
+                </span>
+              </a>
+            ))}
+          </nav>
+
+          <div className="space-y-8 min-w-0">
+
+        <RevelarAlEntrar>
+        <div id="definicion" className="scroll-mt-28 bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700/50 pb-5">
             <h2 className="text-2xl font-bold text-white tracking-wide">Definición de la Función</h2>
             <div className="flex bg-slate-900 p-1.5 rounded-xl border border-slate-700 shadow-inner">
@@ -288,7 +342,7 @@ export default function PaginaFourier() {
             </div>
           </div>
 
-          <div className="animate-in fade-in duration-300">
+          <div key={modoIngreso} className="animar-aparicion">
             {modoIngreso === 'simple' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
@@ -312,25 +366,34 @@ export default function PaginaFourier() {
             {errorMatematico && <p className="text-red-400 text-xs mt-4 font-bold bg-red-400/10 p-3 rounded-lg border border-red-400/20">{errorMatematico}</p>}
           </div>
         </div>
+        </RevelarAlEntrar>
 
-
-        <GraficoFourier 
-          datos={datosParaGrafico} 
-          periodoL={periodoCalculado.L} 
-          periodoT={periodoCalculado.T} 
+        <RevelarAlEntrar retraso={80}>
+        <div id="grafico" className="scroll-mt-28">
+        <GraficoFourier
+          datos={datosParaGrafico}
+          periodoL={periodoCalculado.L}
+          periodoT={periodoCalculado.T}
           armonicos={armonicos}
-          paridad={paridadFuncion} 
+          paridad={paridadFuncion}
           alCambiarArmonicos={setArmonicos}
         />
+        </div>
+        </RevelarAlEntrar>
 
-        <VisualizadorCoeficientes 
-          a0={coeficientesObtenidos.a0} 
-          an={coeficientesObtenidos.an} 
-          bn={coeficientesObtenidos.bn} 
-          armonicos={armonicosDiferidos} 
+        <RevelarAlEntrar retraso={160}>
+        <div id="coeficientes" className="scroll-mt-28">
+        <VisualizadorCoeficientes
+          a0={coeficientesObtenidos.a0}
+          an={coeficientesObtenidos.an}
+          bn={coeficientesObtenidos.bn}
+          armonicos={armonicosDiferidos}
         />
+        </div>
+        </RevelarAlEntrar>
 
-        <div className="bg-slate-800/30 rounded-2xl p-8 border border-slate-700 shadow-xl space-y-4">
+        <RevelarAlEntrar retraso={240}>
+        <div id="aproximacion" className="scroll-mt-28 bg-slate-800/30 rounded-2xl p-8 border border-slate-700 shadow-xl space-y-4">
           <h2 className="text-xl font-bold text-white border-l-4 border-indigo-500 pl-4">Aproximación de la Serie</h2>
           <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4">Expresión analítica resultante (Máx. 5 términos)</p>
           <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700/50 overflow-x-auto text-center shadow-inner">
@@ -341,8 +404,10 @@ export default function PaginaFourier() {
              <KaTeX expresionTex={String.raw`f(t)=\frac{1}{2}\cdot a_0+\sum_{n=1}^{N}[a_n\cdot \cos(n\omega t)+b_n\cdot \sin(n\omega t)]`} />
           </div>
         </div>
+        </RevelarAlEntrar>
 
-
+          </div>
+        </div>
       </section>
       <Footer />
     </main>
