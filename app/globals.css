@@ -69,6 +69,18 @@ html.lenis body {
   overflow: hidden;
 }
 
+/* Contenedor para fórmulas de KaTeX que pueden ser más anchas que la pantalla.
+   KaTeX dibuja fracciones y matrices más altas que la caja de línea: con sólo
+   overflow-x el navegador computa el eje vertical también como scroll y aparece
+   una barra de dos o tres píxeles. Se fija el eje Y y se agrega aire arriba y
+   abajo para que la fórmula entre completa sin recortes. */
+.desplazamiento-formula {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
 @keyframes aparecer {
   from {
     opacity: 0;

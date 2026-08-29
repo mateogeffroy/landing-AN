@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Header from '@/src/components/Header';
 import Footer from '@/src/components/Footer';
 import KaTeX from '@/src/components/KaTeX';
@@ -8,6 +8,7 @@ import FactorizacionInteractiva from '@/src/components/FactorizacionInteractiva'
 import RevelarAlEntrar from '@/src/components/RevelarAlEntrar';
 import GlifoMatriz from '@/src/components/GlifoMatriz';
 import { desplazarHaciaAncla } from '@/src/lib/lenis';
+import { resolverCrout, redondear, type PasoCrout, type ResultadoCrout } from '@/src/lib/crout';
 
 const PATRON_DENSO = [
   [true, true, true],
@@ -40,22 +41,49 @@ const navegacion = [
 const DIMENSION_MINIMA = 1;
 const DIMENSION_MAXIMA = 5; // Límite elegido para priorizar el diseño: pasado 5x5 las matrices dejan de entrar con claridad.
 
-// Determinante por expansión de cofilas. Con n <= 5 el costo (factorial) es irrelevante.
-function determinante(m: number[][]): number {
-  const n = m.length;
-  if (n === 1) return m[0][0];
-  if (n === 2) return m[0][0] * m[1][1] - m[0][1] * m[1][0];
-  let resultado = 0;
-  for (let j = 0; j < n; j++) {
-    const menor = m.slice(1).map((fila) => fila.filter((_, c) => c !== j));
-    resultado += (j % 2 === 0 ? 1 : -1) * m[0][j] * determinante(menor);
-  }
-  return resultado;
+const conceptosPrevios = [
+  {
+    titulo: 'Matriz triangular',
+    texto: 'Matriz cuadrada en la que todos los elementos por encima (triangular inferior) o por debajo (triangular superior) de la diagonal principal son nulos.',
+    ejemplo: String.raw`\underline{\underline{L}} = \begin{pmatrix} 2 & 0 & 0 \\ -1 & 3 & 0 \\ 4 & 0 & 5 \end{pmatrix} \qquad \underline{\underline{U}} = \begin{pmatrix} 2 & 7 & -1 \\ 0 & 3 & 6 \\ 0 & 0 & 5 \end{pmatrix}`,
+    pie: 'La primera es triangular inferior (ceros por encima de la diagonal); la segunda, triangular superior. Notar que los ceros dentro del triángulo, como el 0 en la posición (3,2) de L, están permitidos.',
+    ancho: true,
+  },
+  {
+    titulo: 'Matriz diagonal',
+    texto: 'Es simultáneamente triangular superior e inferior: sólo tiene elementos no nulos en la diagonal principal.',
+    ejemplo: String.raw`\underline{\underline{D}} = \begin{pmatrix} 2 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & 5 \end{pmatrix}`,
+    pie: 'Cumple las dos condiciones a la vez, porque no hay elementos no nulos ni arriba ni abajo de la diagonal.',
+  },
+  {
+    titulo: 'Cierre bajo suma y producto',
+    texto: 'La suma y el producto de dos matrices triangulares de la misma estructura vuelven a dar una matriz con esa misma estructura.',
+    ejemplo: String.raw`\begin{pmatrix} 2 & 0 \\ -1 & 3 \end{pmatrix} + \begin{pmatrix} 4 & 0 \\ 5 & 1 \end{pmatrix} = \begin{pmatrix} 6 & 0 \\ 4 & 4 \end{pmatrix} \qquad \begin{pmatrix} 2 & 0 \\ -1 & 3 \end{pmatrix} \cdot \begin{pmatrix} 4 & 0 \\ 5 & 1 \end{pmatrix} = \begin{pmatrix} 8 & 0 \\ 11 & 3 \end{pmatrix}`,
+    pie: 'Dos triangulares inferiores dan, tanto sumadas como multiplicadas, otra triangular inferior. Esto es lo que permite que el producto L·U reconstruya A sin salirse del esquema.',
+    ancho: true,
+  },
+  {
+    titulo: 'Inversa',
+    texto: 'La inversa de una matriz triangular es otra matriz triangular de la misma estructura.',
+    ejemplo: String.raw`\begin{pmatrix} 2 & 0 \\ -1 & 3 \end{pmatrix}^{-1} = \begin{pmatrix} \tfrac{1}{2} & 0 \\ \tfrac{1}{6} & \tfrac{1}{3} \end{pmatrix}`,
+    pie: 'La inversa de una triangular inferior sigue siendo triangular inferior, y su diagonal es la inversa elemento a elemento de la original.',
+  },
+  {
+    titulo: 'Determinante',
+    texto: 'El determinante de una matriz triangular es igual al producto de los elementos de su diagonal principal, lo que hace muy barato calcularlo una vez factorizada A.',
+    ejemplo: String.raw`\begin{vmatrix} 2 & 7 & -1 \\ 0 & 3 & 6 \\ 0 & 0 & 5 \end{vmatrix} = 2 \cdot 3 \cdot 5 = 30`,
+    pie: String.raw`Como |A| = |L| · |U| y la diagonal de U son todos 1, el determinante de A es directamente el producto de la diagonal de L.`,
+    ancho: true,
+  },
+];
+
+function matrizVaciaString(n: number): string[][] {
+  return Array.from({ length: n }, () => Array.from({ length: n }, () => ''));
 }
 
-function matrizIdentidadString(n: number): string[][] {
-  return Array.from({ length: n }, (_, f) => Array.from({ length: n }, (_, c) => (f === c ? '1' : '0')));
-}
+// Subíndices Unicode para los placeholders: los inputs son texto plano y no admiten KaTeX.
+const SUBINDICES = '₀₁₂₃₄₅₆₇₈₉';
+const subindice = (valor: number) => String(valor).split('').map((digito) => SUBINDICES[Number(digito)]).join('');
 
 function matrizATex(m: number[][]): string {
   return `\\begin{pmatrix} ${m.map((fila) => fila.join(' & ')).join(' \\\\ ')} \\end{pmatrix}`;
@@ -65,25 +93,50 @@ function vectorATex(v: number[]): string {
   return `\\begin{pmatrix} ${v.join(' \\\\ ')} \\end{pmatrix}`;
 }
 
+function PasoCalculadora({ numero, titulo, color, children }: { numero: number; titulo: string; color: string; children: ReactNode }) {
+  return (
+    <div className={`bg-slate-950/30 border-l-4 ${color} rounded-r-xl p-5 md:p-6 space-y-4`}>
+      <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-3">
+        <span className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-slate-800 text-slate-300 text-xs font-black">
+          {numero}
+        </span>
+        {titulo}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function ListaPasos({ pasos }: { pasos: PasoCrout[] }) {
+  return (
+    <ol className="space-y-2">
+      {pasos.map((paso, indice) => (
+        <li key={paso.clave} className="bg-slate-950/60 border border-slate-700/50 rounded-lg px-4 py-3">
+          {paso.grupo !== pasos[indice - 1]?.grupo && (
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{paso.grupo}</p>
+          )}
+          <div className="desplazamiento-formula">
+            <KaTeX expresionTex={paso.tex} />
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export default function PaginaCroutTeoria() {
   // Estado de la calculadora (sección 4)
   const [n, setN] = useState(3);
-  const [matrizA, setMatrizA] = useState<string[][]>([
-    ['2', '1', '1'],
-    ['4', '1', '0'],
-    ['-2', '2', '1'],
-  ]);
-  const [vectorB, setVectorB] = useState<string[]>(['3', '6', '1']);
+  const [matrizA, setMatrizA] = useState<string[][]>(() => matrizVaciaString(3));
+  const [vectorB, setVectorB] = useState<string[]>(() => Array(3).fill(''));
   const [error, setError] = useState<string | null>(null);
-  const [resultados, setResultados] = useState<any | null>(null);
+  const [resultados, setResultados] = useState<ResultadoCrout | null>(null);
+  const [sistemaResuelto, setSistemaResuelto] = useState<{ A: number[][]; b: number[] } | null>(null);
 
   const cambiarDimension = (nuevoN: number) => {
     setN(nuevoN);
-    setMatrizA((previa) => {
-      const identidad = matrizIdentidadString(nuevoN);
-      return identidad.map((fila, f) => fila.map((valor, c) => previa[f]?.[c] ?? valor));
-    });
-    setVectorB((previo) => Array.from({ length: nuevoN }, (_, i) => previo[i] ?? '0'));
+    setMatrizA((previa) => matrizVaciaString(nuevoN).map((fila, f) => fila.map((valor, c) => previa[f]?.[c] ?? valor)));
+    setVectorB((previo) => Array.from({ length: nuevoN }, (_, i) => previo[i] ?? ''));
     setError(null);
     setResultados(null);
   };
@@ -105,6 +158,7 @@ export default function PaginaCroutTeoria() {
   const resolverSistema = () => {
     setError(null);
     setResultados(null);
+    setSistemaResuelto(null);
 
     const A = matrizA.map((fila) => fila.map((val) => parseFloat(val)));
     const b = vectorB.map((val) => parseFloat(val));
@@ -114,59 +168,12 @@ export default function PaginaCroutTeoria() {
       return;
     }
 
-    const EPSILON = 1e-7;
-    const deltas: number[] = [];
-    for (let k = 1; k <= n; k++) {
-      const submatriz = A.slice(0, k).map((fila) => fila.slice(0, k));
-      deltas.push(determinante(submatriz));
+    const resultado = resolverCrout(A, b);
+    setResultados(resultado);
+    setSistemaResuelto({ A, b });
+    if (!resultado.factorizable) {
+      setError(`La matriz no cumple el teorema de existencia. ${resultado.motivo}`);
     }
-
-    if (deltas.some((d) => Math.abs(d) < EPSILON)) {
-      setError('La matriz no cumple el teorema: los determinantes de sus submatrices principales deben ser distintos de cero para garantizar la factorización LU sin pivotaje.');
-      setResultados({ deltas, falloTeorema: true });
-      return;
-    }
-
-    const L: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
-    const U: number[][] = Array.from({ length: n }, (_, i) => Array(n).fill(0).map((_, j) => (i === j ? 1 : 0)));
-
-    for (let k = 0; k < n; k++) {
-      for (let i = k; i < n; i++) {
-        let suma = 0;
-        for (let p = 0; p < k; p++) suma += L[i][p] * U[p][k];
-        L[i][k] = A[i][k] - suma;
-      }
-      for (let j = k + 1; j < n; j++) {
-        let suma = 0;
-        for (let p = 0; p < k; p++) suma += L[k][p] * U[p][j];
-        U[k][j] = (A[k][j] - suma) / L[k][k];
-      }
-    }
-
-    const y = Array(n).fill(0);
-    for (let i = 0; i < n; i++) {
-      let suma = 0;
-      for (let j = 0; j < i; j++) suma += L[i][j] * y[j];
-      y[i] = (b[i] - suma) / L[i][i];
-    }
-
-    const x = Array(n).fill(0);
-    for (let i = n - 1; i >= 0; i--) {
-      let suma = 0;
-      for (let j = i + 1; j < n; j++) suma += U[i][j] * x[j];
-      x[i] = y[i] - suma;
-    }
-
-    const formatear = (num: number) => parseFloat(num.toFixed(4));
-
-    setResultados({
-      deltas: deltas.map(formatear),
-      L: L.map((f) => f.map(formatear)),
-      U: U.map((f) => f.map(formatear)),
-      y: y.map(formatear),
-      x: x.map(formatear),
-      falloTeorema: false,
-    });
   };
 
   const tamanioCelda = n <= 3 ? 'w-16 h-12 text-base' : n === 4 ? 'w-14 h-11 text-sm' : 'w-11 h-10 text-xs';
@@ -232,29 +239,36 @@ export default function PaginaCroutTeoria() {
 
               {/* CONCEPTOS PREVIOS */}
               <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-6">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Conceptos previos</p>
-                <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                  <div>
-                    <dt className="font-bold text-blue-300 text-sm mb-1">Matriz triangular</dt>
-                    <dd className="text-sm text-slate-400 leading-relaxed">Matriz cuadrada en la que todos los elementos por encima (triangular inferior) o por debajo (triangular superior) de la diagonal principal son nulos.</dd>
-                  </div>
-                  <div>
-                    <dt className="font-bold text-blue-300 text-sm mb-1">Matriz diagonal</dt>
-                    <dd className="text-sm text-slate-400 leading-relaxed">Es simultáneamente triangular superior e inferior: sólo tiene elementos no nulos en la diagonal principal.</dd>
-                  </div>
-                  <div>
-                    <dt className="font-bold text-blue-300 text-sm mb-1">Cierre bajo suma y producto</dt>
-                    <dd className="text-sm text-slate-400 leading-relaxed">La suma y el producto de dos matrices triangulares de la misma estructura vuelven a dar una matriz con esa misma estructura.</dd>
-                  </div>
-                  <div>
-                    <dt className="font-bold text-blue-300 text-sm mb-1">Inversa</dt>
-                    <dd className="text-sm text-slate-400 leading-relaxed">La inversa de una matriz triangular es otra matriz triangular de la misma estructura.</dd>
-                  </div>
-                  <div className="md:col-span-2">
-                    <dt className="font-bold text-blue-300 text-sm mb-1">Determinante</dt>
-                    <dd className="text-sm text-slate-400 leading-relaxed">El determinante de una matriz triangular es igual al producto de los elementos de su diagonal principal, lo que hace muy barato calcularlo una vez factorizada A.</dd>
-                  </div>
-                </dl>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">
+                  Conceptos previos <span className="text-slate-600 normal-case tracking-normal font-medium">· desplegá cada uno para ver un ejemplo</span>
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 items-start">
+                  {conceptosPrevios.map((concepto) => (
+                    <details
+                      key={concepto.titulo}
+                      className={`group rounded-lg border border-slate-700/50 bg-slate-900/40 open:bg-slate-900/70 transition-colors ${concepto.ancho ? 'md:col-span-2' : ''}`}
+                    >
+                      <summary className="flex items-start gap-3 p-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                        <span className="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full text-slate-400 group-hover:text-blue-300 group-hover:bg-blue-500/10 group-open:text-blue-300 transition-colors">
+                          <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4 transition-transform duration-300 ease-out group-open:rotate-180">
+                            <path d="M4.5 7.5l5.5 5.5 5.5-5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-bold text-blue-300 text-sm mb-1">{concepto.titulo}</span>
+                          <span className="block text-sm text-slate-400 leading-relaxed">{concepto.texto}</span>
+                        </span>
+                      </summary>
+                      <div className="mx-4 mb-4 rounded-lg border border-slate-700/50 bg-slate-950/60 p-4 shadow-inner">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-2">Ejemplo</p>
+                        <div className="desplazamiento-formula">
+                          <KaTeX expresionTex={concepto.ejemplo} enBloque={true} />
+                        </div>
+                        <p className="text-xs text-slate-400 mt-2 leading-relaxed">{concepto.pie}</p>
+                      </div>
+                    </details>
+                  ))}
+                </div>
               </div>
 
               {/* TEOREMA DE EXISTENCIA Y UNICIDAD */}
@@ -264,7 +278,7 @@ export default function PaginaCroutTeoria() {
                   Toda matriz cuadrada <KaTeX expresionTex="\underline{\underline{A}}" /> cuyos menores principales son distintos de cero
                   puede expresarse como producto de dos matrices triangulares:
                 </p>
-                <div className="bg-slate-900/80 rounded-xl border border-slate-700/50 shadow-inner p-4 overflow-x-auto">
+                <div className="bg-slate-900/80 rounded-xl border border-slate-700/50 shadow-inner p-4 desplazamiento-formula">
                   <KaTeX
                     expresionTex={String.raw`\Delta_1 = a_{11} \neq 0 \quad , \quad \Delta_2 = \begin{vmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{vmatrix} \neq 0 \quad , \quad \ldots \quad , \quad \Delta_n = |\underline{\underline{A}}| \neq 0`}
                     enBloque={true}
@@ -289,7 +303,7 @@ export default function PaginaCroutTeoria() {
                 </p>
               </div>
 
-              <div className="bg-slate-900/80 p-6 md:p-8 rounded-xl border border-slate-700/50 text-center shadow-inner overflow-x-auto">
+              <div className="bg-slate-900/80 p-6 md:p-8 rounded-xl border border-slate-700/50 text-center shadow-inner desplazamiento-formula">
                 <KaTeX expresionTex="\underline{\underline{A}} = \underline{\underline{L}} \cdot \underline{\underline{U}}" enBloque={true} />
 
                 <div className="mt-8 flex flex-col xl:flex-row items-center justify-center gap-6">
@@ -306,38 +320,41 @@ export default function PaginaCroutTeoria() {
                 </p>
               </div>
 
+            </div>
+            </RevelarAlEntrar>
+
+            {/* SECCIÓN 2: INTERACTIVIDAD */}
+            {/* z-10: los paneles flotantes de los desarrollos se salen de la tarjeta y deben quedar
+                por encima de la sección 3, que crea su propio contexto de apilado al animarse. */}
+            <RevelarAlEntrar className="relative z-10">
+            <div id="construccion" className="scroll-mt-28 bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-wide border-l-4 border-indigo-500 pl-4 mb-4 flex flex-wrap items-center gap-2">
+                2. Construcción de Matrices <KaTeX expresionTex="(\underline{\underline{A}} = \underline{\underline{L}} \cdot \underline{\underline{U}})" />
+              </h2>
               {/* FÓRMULA GENERAL */}
-              <div className="bg-slate-800/60 border-l-4 border-blue-500 rounded-r-xl p-6">
+              <div className="bg-slate-800/60 border-l-4 border-blue-500 rounded-r-xl p-6 mb-8">
                 <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-3">Fórmula general, para n×n</p>
                 <p className="text-slate-300 leading-relaxed mb-4">
-                  Antes de bajar al caso concreto de 3×3 de la sección siguiente, así se ve el algoritmo de Crout para un sistema
-                  de cualquier tamaño <KaTeX expresionTex="n" />. Primero la columna 1 de L y la fila 1 de U:
+                  Antes de bajar al ejemplo concreto de 3×3, así se define el algoritmo de Crout para un sistema de cualquier
+                  tamaño <KaTeX expresionTex="n" />. Primero la columna 1 de L y la fila 1 de U:
                 </p>
-                <div className="bg-slate-900/80 rounded-xl border border-slate-700/50 shadow-inner p-4 overflow-x-auto mb-4">
+                <div className="bg-slate-900/80 rounded-xl border border-slate-700/50 shadow-inner p-4 desplazamiento-formula mb-4">
                   <KaTeX expresionTex={String.raw`l_{i1} = a_{i1} \quad (i=1,\ldots,n) \qquad\qquad u_{1j} = \frac{a_{1j}}{l_{11}} \quad (j=2,\ldots,n)`} enBloque={true} />
                 </div>
                 <p className="text-slate-300 leading-relaxed mb-4">
                   Y luego, avanzando columna a columna (<KaTeX expresionTex="k = 2,\ldots,n" />), cada nueva entrada de L y de U descuenta lo que ya
                   aportaron las columnas anteriores:
                 </p>
-                <div className="bg-slate-900/80 rounded-xl border border-slate-700/50 shadow-inner p-4 overflow-x-auto">
+                <div className="bg-slate-900/80 rounded-xl border border-slate-700/50 shadow-inner p-4 desplazamiento-formula">
                   <KaTeX
                     expresionTex={String.raw`l_{ik} = a_{ik} - \sum_{p=1}^{k-1} l_{ip}\,u_{pk} \quad (i \geq k) \qquad\qquad u_{kj} = \frac{a_{kj} - \sum_{p=1}^{k-1} l_{kp}\,u_{pj}}{l_{kk}} \quad (j > k)`}
                     enBloque={true}
                   />
                 </div>
               </div>
-            </div>
-            </RevelarAlEntrar>
 
-            {/* SECCIÓN 2: INTERACTIVIDAD */}
-            <RevelarAlEntrar>
-            <div id="construccion" className="scroll-mt-28 bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
-              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-wide border-l-4 border-indigo-500 pl-4 mb-4 flex flex-wrap items-center gap-2">
-                2. Construcción de Matrices <KaTeX expresionTex="(\underline{\underline{A}} = \underline{\underline{L}} \cdot \underline{\underline{U}})" />
-              </h2>
               <p className="text-slate-300 leading-relaxed mb-8">
-                Esto es la fórmula general de arriba, particularizada en <KaTeX expresionTex="n = 3" />. Cada una de las 9 ecuaciones
+                A continuación, esas mismas fórmulas particularizadas en <KaTeX expresionTex="n = 3" />. Cada una de las 9 ecuaciones
                 sale de igualar una celda de A con el producto de una fila de L por una columna de U. Pase el cursor por una celda
                 o ecuación para relacionarlas, y abra el <span className="text-blue-300 font-bold">desarrollo ▸</span> de cualquier
                 fórmula para ver el producto original y el despeje que lleva a la fórmula de cálculo.
@@ -446,8 +463,10 @@ export default function PaginaCroutTeoria() {
                             key={c}
                             type="number"
                             value={valor}
+                            placeholder={`a${subindice(r + 1)}${subindice(c + 1)}`}
+                            aria-label={`Elemento a${r + 1}${c + 1} de la matriz A`}
                             onChange={(e) => manejarCambioA(r, c, e.target.value)}
-                            className={`${tamanioCelda} text-center bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono`}
+                            className={`${tamanioCelda} text-center bg-slate-800 border border-slate-600 rounded text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono`}
                           />
                         ))}
                       </div>
@@ -465,8 +484,10 @@ export default function PaginaCroutTeoria() {
                         key={r}
                         type="number"
                         value={valor}
+                        placeholder={`b${subindice(r + 1)}`}
+                        aria-label={`Elemento b${r + 1} del vector de términos independientes`}
                         onChange={(e) => manejarCambioB(r, e.target.value)}
-                        className={`${tamanioCelda} text-center bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono`}
+                        className={`${tamanioCelda} text-center bg-slate-800 border border-slate-600 rounded text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono`}
                       />
                     ))}
                   </div>
@@ -489,54 +510,114 @@ export default function PaginaCroutTeoria() {
                 </div>
               )}
 
-              {resultados && (
-                <div className="bg-slate-900/40 rounded-2xl p-6 md:p-8 border border-slate-700/50 space-y-10 animar-aparicion">
+              {resultados && sistemaResuelto && (
+                <div className="bg-slate-900/40 rounded-2xl p-6 md:p-8 border border-slate-700/50 space-y-6 animar-aparicion">
 
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-6 border-l-4 border-blue-500 pl-4">Verificación del Teorema</h3>
-                    <p className="text-slate-300 mb-4">Determinantes de las submatrices principales, para asegurar la existencia de L y U:</p>
-                    <div className="flex flex-wrap gap-4">
-                      {resultados.deltas.map((delta: number, indice: number) => (
-                        <div key={indice} className="bg-slate-950/60 p-4 rounded-xl border border-slate-700/50 min-w-[130px] text-center">
-                          <KaTeX expresionTex={`\\Delta_{${indice + 1}} = ${delta}`} />
-                        </div>
-                      ))}
+                  <PasoCalculadora numero={1} titulo="Verificación previa: ¿es aplicable Crout?" color="border-blue-500">
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      Todos los menores principales de <KaTeX expresionTex="\underline{\underline{A}}" /> deben ser distintos de
+                      cero. Si alguno se anula, la factorización sin pivotaje no existe y el algoritmo dividiría por cero.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      {resultados.deltas.map((delta, indice) => {
+                        const nulo = Math.abs(delta) < 1e-7;
+                        return (
+                          <div
+                            key={indice}
+                            className={`p-4 rounded-xl border min-w-[130px] text-center ${nulo ? 'bg-red-500/10 border-red-500/50' : 'bg-slate-950/60 border-slate-700/50'}`}
+                          >
+                            <KaTeX expresionTex={`\\Delta_{${indice + 1}} = ${redondear(delta)}`} />
+                            <p className={`text-[10px] font-black uppercase tracking-widest mt-2 ${nulo ? 'text-red-400' : 'text-emerald-500'}`}>
+                              {nulo ? 'Se anula' : 'Distinto de 0'}
+                            </p>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
+                    {resultados.factorizable ? (
+                      <p className="text-sm text-emerald-300">
+                        Ningún menor principal se anula: existe una única factorización <KaTeX expresionTex="\underline{\underline{A}} = \underline{\underline{L}} \cdot \underline{\underline{U}}" /> con
+                        la diagonal de U fijada en 1.
+                      </p>
+                    ) : (
+                      <p className="text-sm text-red-300">{resultados.motivo}</p>
+                    )}
+                  </PasoCalculadora>
 
-                  {!resultados.falloTeorema && (
+                  {resultados.factorizable && (
                     <>
-                      <div>
-                        <h3 className="text-xl font-bold text-white mb-6 border-l-4 border-indigo-500 pl-4">Matrices Factorizadas</h3>
-                        <div className="flex flex-col md:flex-row gap-8 items-center justify-center bg-slate-950/40 p-8 rounded-2xl border border-slate-700/50 overflow-x-auto">
+                      <PasoCalculadora numero={2} titulo="Factorización: cálculo de L y U" color="border-yellow-500">
+                        <p className="text-slate-300 text-sm leading-relaxed">
+                          Se alterna una columna de L y una fila de U, en ese orden, porque cada entrada depende de las
+                          calculadas antes: <KaTeX expresionTex={String.raw`l_{ik} = a_{ik} - \sum_{p=1}^{k-1} l_{ip}u_{pk}`} /> y <KaTeX expresionTex={String.raw`u_{kj} = \frac{a_{kj} - \sum_{p=1}^{k-1} l_{kp}u_{pj}}{l_{kk}}`} />.
+                        </p>
+                        <ListaPasos pasos={resultados.pasosFactorizacion} />
+                      </PasoCalculadora>
+
+                      <PasoCalculadora numero={3} titulo="Matrices factorizadas" color="border-indigo-500">
+                        <div className="flex flex-col md:flex-row gap-8 items-center justify-center bg-slate-950/40 p-6 rounded-2xl border border-slate-700/50 desplazamiento-formula">
                           <div className="text-center">
-                            <p className="text-xs font-black text-indigo-400 mb-4 uppercase tracking-widest">Matriz Inferior (L)</p>
+                            <p className="text-xs font-black text-yellow-400 mb-3 uppercase tracking-widest">Matriz Inferior (L)</p>
                             <KaTeX expresionTex={matrizATex(resultados.L)} enBloque={true} />
                           </div>
                           <div className="text-2xl font-black text-slate-500">×</div>
                           <div className="text-center">
-                            <p className="text-xs font-black text-emerald-400 mb-4 uppercase tracking-widest">Matriz Superior (U)</p>
+                            <p className="text-xs font-black text-green-400 mb-3 uppercase tracking-widest">Matriz Superior (U)</p>
                             <KaTeX expresionTex={matrizATex(resultados.U)} enBloque={true} />
                           </div>
+                          <div className="text-2xl font-black text-slate-500">=</div>
+                          <div className="text-center">
+                            <p className="text-xs font-black text-red-400 mb-3 uppercase tracking-widest">Matriz Original (A)</p>
+                            <KaTeX expresionTex={matrizATex(sistemaResuelto.A)} enBloque={true} />
+                          </div>
                         </div>
-                      </div>
+                      </PasoCalculadora>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                          <h3 className="text-lg font-bold text-white mb-4 border-l-4 border-purple-500 pl-4">Vector Intermedio (y)</h3>
-                          <p className="text-sm text-slate-400 mb-4">Solución descendente de <KaTeX expresionTex="\underline{\underline{L}}\cdot\vec{y} = \vec{b}" /></p>
-                          <div className="bg-slate-950/60 p-6 rounded-xl border border-slate-700/50 flex justify-center overflow-x-auto">
-                            <KaTeX expresionTex={`\\vec{y} = ${vectorATex(resultados.y)}`} enBloque={true} />
+                      <PasoCalculadora numero={4} titulo="Reemplazo en la ecuación original" color="border-purple-500">
+                        <p className="text-slate-300 text-sm leading-relaxed">
+                          Se sustituye <KaTeX expresionTex="\underline{\underline{A}}" /> por su factorización y se define el vector
+                          intermedio <KaTeX expresionTex="\vec{y} = \underline{\underline{U}} \cdot \vec{x}" />. El sistema original queda
+                          partido en dos sistemas triangulares encadenados:
+                        </p>
+                        <div className="bg-slate-950/60 rounded-xl border border-slate-700/50 p-4 desplazamiento-formula">
+                          <KaTeX
+                            expresionTex={String.raw`\underline{\underline{A}} \cdot \vec{x} = \vec{b} \quad \Longrightarrow \quad (\underline{\underline{L}} \cdot \underline{\underline{U}}) \cdot \vec{x} = \vec{b} \quad \Longrightarrow \quad \underline{\underline{L}} \cdot \underbrace{(\underline{\underline{U}} \cdot \vec{x})}_{\vec{y}} = \vec{b}`}
+                            enBloque={true}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-slate-950/60 rounded-xl border border-slate-700/50 p-4 desplazamiento-formula text-center">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Sistema 1 · hacia adelante</p>
+                            <KaTeX expresionTex={`${matrizATex(resultados.L)} \\cdot \\vec{y} = ${vectorATex(sistemaResuelto.b)}`} enBloque={true} />
+                          </div>
+                          <div className="bg-slate-950/60 rounded-xl border border-slate-700/50 p-4 desplazamiento-formula text-center">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Sistema 2 · hacia atrás</p>
+                            <KaTeX expresionTex={`${matrizATex(resultados.U)} \\cdot \\vec{x} = \\vec{y}`} enBloque={true} />
                           </div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-white mb-4 border-l-4 border-emerald-500 pl-4">Vector Solución (x)</h3>
-                          <p className="text-sm text-slate-400 mb-4">Solución ascendente de <KaTeX expresionTex="\underline{\underline{U}}\cdot\vec{x} = \vec{y}" /></p>
-                          <div className="bg-slate-950/60 p-6 rounded-xl border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] flex justify-center overflow-x-auto">
-                            <KaTeX expresionTex={`\\vec{x} = ${vectorATex(resultados.x)}`} enBloque={true} />
-                          </div>
+                      </PasoCalculadora>
+
+                      <PasoCalculadora numero={5} titulo="Sustitución hacia adelante: L · y = b" color="border-purple-500">
+                        <p className="text-slate-300 text-sm leading-relaxed">
+                          Al ser <KaTeX expresionTex="\underline{\underline{L}}" /> triangular inferior, cada <KaTeX expresionTex="y_i" /> se
+                          despeja de arriba hacia abajo usando los anteriores:
+                        </p>
+                        <ListaPasos pasos={resultados.pasosY} />
+                        <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-700/50 flex justify-center desplazamiento-formula">
+                          <KaTeX expresionTex={`\\vec{y} = ${vectorATex(resultados.y)}`} enBloque={true} />
                         </div>
-                      </div>
+                      </PasoCalculadora>
+
+                      <PasoCalculadora numero={6} titulo="Sustitución hacia atrás: U · x = y" color="border-emerald-500">
+                        <p className="text-slate-300 text-sm leading-relaxed">
+                          Con <KaTeX expresionTex="\vec{y}" /> conocido y <KaTeX expresionTex="\underline{\underline{U}}" /> triangular
+                          superior (diagonal 1), cada <KaTeX expresionTex="x_i" /> se despeja de abajo hacia arriba:
+                        </p>
+                        <ListaPasos pasos={resultados.pasosX} />
+                        <div className="bg-slate-950/60 p-6 rounded-xl border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] flex justify-center desplazamiento-formula">
+                          <KaTeX expresionTex={`\\vec{x} = ${vectorATex(resultados.x)}`} enBloque={true} />
+                        </div>
+                      </PasoCalculadora>
                     </>
                   )}
                 </div>

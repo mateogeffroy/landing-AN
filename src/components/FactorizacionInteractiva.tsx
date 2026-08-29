@@ -23,7 +23,9 @@ interface EcuacionCrout {
 export default function FactorizacionInteractiva() {
   const [hovered, setHovered] = useState<Celda | null>(null);
   const [locked, setLocked] = useState<Celda | null>(null);
-  const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+  // Sólo un desarrollo abierto a la vez: se despliega como panel flotante sobre las tarjetas
+  // de abajo, así abrir uno no empuja ni estira al resto de la fila de la grilla.
+  const [abierta, setAbierta] = useState<string | null>(null);
 
   // El elemento activo es el que está bloqueado, o en su defecto, el que tiene hover.
   const active = locked || hovered;
@@ -38,15 +40,7 @@ export default function FactorizacionInteractiva() {
 
   const toggleDesarrollo = (id: string, evento: React.MouseEvent) => {
     evento.stopPropagation();
-    setAbiertas((previas) => {
-      const siguientes = new Set(previas);
-      if (siguientes.has(id)) {
-        siguientes.delete(id);
-      } else {
-        siguientes.add(id);
-      }
-      return siguientes;
-    });
+    setAbierta((previa) => (previa === id ? null : id));
   };
 
   // Colores en formato Hex para KaTeX: Rojo (A), Amarillo (L), Verde (U)
@@ -250,11 +244,11 @@ export default function FactorizacionInteractiva() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
           {ecuacionesOrdenadas.map((eq) => {
             const isActive = active?.r === eq.r && active?.c === eq.c;
             const isLocked = locked?.r === eq.r && locked?.c === eq.c;
-            const abierta = abiertas.has(eq.id);
+            const estaAbierta = abierta === eq.id;
             const colorMatriz = eq.matriz === 'L' ? 'border-yellow-500/60' : 'border-green-500/60';
             return (
               <div
@@ -262,7 +256,9 @@ export default function FactorizacionInteractiva() {
                 onMouseEnter={() => setHovered({ r: eq.r, c: eq.c })}
                 onMouseLeave={() => setHovered(null)}
                 onClick={() => toggleLock(eq.r, eq.c)}
-                className={`rounded-lg border border-l-4 cursor-pointer transition-all duration-300 flex flex-col ${colorMatriz} ${
+                className={`relative rounded-lg border border-l-4 cursor-pointer transition-colors duration-300 ${colorMatriz} ${
+                  estaAbierta ? 'z-20' : 'z-0'
+                } ${
                   isActive
                     ? `bg-blue-900/30 border-blue-500/50 shadow-[0_4px_15px_rgba(59,130,246,0.15)] ${isLocked ? 'ring-2 ring-blue-500' : ''}`
                     : 'bg-slate-900/50 border-slate-700/50 opacity-80 hover:opacity-100'
@@ -280,24 +276,30 @@ export default function FactorizacionInteractiva() {
 
                   <button
                     onClick={(evento) => toggleDesarrollo(eq.id, evento)}
-                    aria-expanded={abierta}
-                    aria-label={abierta ? 'Ocultar desarrollo' : 'Ver desarrollo'}
+                    aria-expanded={estaAbierta}
+                    aria-label={estaAbierta ? 'Ocultar desarrollo' : 'Ver desarrollo'}
                     className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 ease-out hover:bg-blue-500/10 hover:ring-2 hover:ring-blue-400/40 ${
-                      abierta ? 'text-blue-300 bg-blue-500/10 ring-2 ring-blue-400/40' : 'text-slate-400'
+                      estaAbierta ? 'text-blue-300 bg-blue-500/10 ring-2 ring-blue-400/40' : 'text-slate-400'
                     }`}
                   >
-                    <svg viewBox="0 0 20 20" fill="none" className={`w-4 h-4 transition-transform duration-300 ease-out ${abierta ? 'rotate-180' : ''}`}>
+                    <svg viewBox="0 0 20 20" fill="none" className={`w-4 h-4 transition-transform duration-300 ease-out ${estaAbierta ? 'rotate-180' : ''}`}>
                       <path d="M4.5 7.5l5.5 5.5 5.5-5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                 </div>
 
-                <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${abierta ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                <div
+                  className={`absolute -left-2 -right-2 top-full pt-2 grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                    estaAbierta ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                  }`}
+                >
                   <div className="overflow-hidden">
                     <div
                       onClick={(evento) => evento.stopPropagation()}
-                      className="cursor-default mx-3 mb-3 rounded-lg border border-slate-700/50 bg-slate-950/60 p-4 space-y-3 shadow-inner"
+                      className="relative cursor-default rounded-xl border border-blue-500/40 bg-slate-950 p-4 space-y-3 shadow-2xl shadow-black/70"
                     >
+                      {/* Pico que ancla el panel a la flecha que lo abrió. */}
+                      <span className="absolute -top-[7px] right-8 w-3 h-3 rotate-45 border-t border-l border-blue-500/40 bg-slate-950" />
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">1. Producto (fila de L) · (columna de U)</p>
                         <div className="text-sm"><KaTeX expresionTex={eq.partida} /></div>
