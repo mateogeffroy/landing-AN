@@ -47,7 +47,6 @@ const conceptosPrevios = [
     texto: 'Matriz cuadrada en la que todos los elementos por encima (triangular inferior) o por debajo (triangular superior) de la diagonal principal son nulos.',
     ejemplo: String.raw`\underline{\underline{L}} = \begin{pmatrix} 2 & 0 & 0 \\ -1 & 3 & 0 \\ 4 & 0 & 5 \end{pmatrix} \qquad \underline{\underline{U}} = \begin{pmatrix} 2 & 7 & -1 \\ 0 & 3 & 6 \\ 0 & 0 & 5 \end{pmatrix}`,
     pie: 'La primera es triangular inferior (ceros por encima de la diagonal); la segunda, triangular superior. Notar que los ceros dentro del triángulo, como el 0 en la posición (3,2) de L, están permitidos.',
-    ancho: true,
   },
   {
     titulo: 'Matriz diagonal',
@@ -60,7 +59,6 @@ const conceptosPrevios = [
     texto: 'La suma y el producto de dos matrices triangulares de la misma estructura vuelven a dar una matriz con esa misma estructura.',
     ejemplo: String.raw`\begin{pmatrix} 2 & 0 \\ -1 & 3 \end{pmatrix} + \begin{pmatrix} 4 & 0 \\ 5 & 1 \end{pmatrix} = \begin{pmatrix} 6 & 0 \\ 4 & 4 \end{pmatrix} \qquad \begin{pmatrix} 2 & 0 \\ -1 & 3 \end{pmatrix} \cdot \begin{pmatrix} 4 & 0 \\ 5 & 1 \end{pmatrix} = \begin{pmatrix} 8 & 0 \\ 11 & 3 \end{pmatrix}`,
     pie: 'Dos triangulares inferiores dan, tanto sumadas como multiplicadas, otra triangular inferior. Esto es lo que permite que el producto L·U reconstruya A sin salirse del esquema.',
-    ancho: true,
   },
   {
     titulo: 'Inversa',
@@ -73,7 +71,6 @@ const conceptosPrevios = [
     texto: 'El determinante de una matriz triangular es igual al producto de los elementos de su diagonal principal, lo que hace muy barato calcularlo una vez factorizada A.',
     ejemplo: String.raw`\begin{vmatrix} 2 & 7 & -1 \\ 0 & 3 & 6 \\ 0 & 0 & 5 \end{vmatrix} = 2 \cdot 3 \cdot 5 = 30`,
     pie: String.raw`Como |A| = |L| · |U| y la diagonal de U son todos 1, el determinante de A es directamente el producto de la diagonal de L.`,
-    ancho: true,
   },
 ];
 
@@ -242,13 +239,15 @@ export default function PaginaCroutTeoria() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">
                   Conceptos previos <span className="text-slate-600 normal-case tracking-normal font-medium">· desplegá cada uno para ver un ejemplo</span>
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 items-start">
-                  {conceptosPrevios.map((concepto) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 items-stretch">
+                  {conceptosPrevios.map((concepto, indice) => (
                     <details
                       key={concepto.titulo}
-                      className={`group rounded-lg border border-slate-700/50 bg-slate-900/40 open:bg-slate-900/70 transition-colors ${concepto.ancho ? 'md:col-span-2' : ''}`}
+                      className={`group h-full min-h-36 flex flex-col rounded-lg border border-slate-700/50 bg-slate-900/40 open:bg-slate-900/70 transition-colors ${
+                        indice === conceptosPrevios.length - 1 && conceptosPrevios.length % 2 === 1 ? 'md:col-span-2' : ''
+                      }`}
                     >
-                      <summary className="flex items-start gap-3 p-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                      <summary className="flex flex-1 items-start gap-3 p-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                         <span className="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full text-slate-400 group-hover:text-blue-300 group-hover:bg-blue-500/10 group-open:text-blue-300 transition-colors">
                           <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4 transition-transform duration-300 ease-out group-open:rotate-180">
                             <path d="M4.5 7.5l5.5 5.5 5.5-5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -273,7 +272,7 @@ export default function PaginaCroutTeoria() {
 
               {/* TEOREMA DE EXISTENCIA Y UNICIDAD */}
               <div className="bg-slate-800/60 border-l-4 border-emerald-500 rounded-r-xl p-6">
-                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-3">Teorema de existencia y unicidad</p>
+                <p className="text-sm md:text-base font-black uppercase tracking-widest text-emerald-400 mb-3">Teorema de existencia y unicidad</p>
                 <p className="text-slate-300 leading-relaxed mb-4">
                   Toda matriz cuadrada <KaTeX expresionTex="\underline{\underline{A}}" /> cuyos menores principales son distintos de cero
                   puede expresarse como producto de dos matrices triangulares:
@@ -356,8 +355,8 @@ export default function PaginaCroutTeoria() {
               <p className="text-slate-300 leading-relaxed mb-8">
                 A continuación, esas mismas fórmulas particularizadas en <KaTeX expresionTex="n = 3" />. Cada una de las 9 ecuaciones
                 sale de igualar una celda de A con el producto de una fila de L por una columna de U. Pase el cursor por una celda
-                o ecuación para relacionarlas, y abra el <span className="text-blue-300 font-bold">desarrollo ▸</span> de cualquier
-                fórmula para ver el producto original y el despeje que lleva a la fórmula de cálculo.
+                o ecuación para relacionarlas: el <span className="text-blue-300 font-bold">botón con la flecha ▾</span> de
+                cada tarjeta muestra el desarrollo de la fórmula, con el producto original y el despeje que lleva a la fórmula de cálculo.
               </p>
               <FactorizacionInteractiva />
             </div>
@@ -386,7 +385,7 @@ export default function PaginaCroutTeoria() {
                   <p className="text-slate-400">
                     Al ser <KaTeX expresionTex="\underline{\underline{L}}" /> triangular inferior, se despeja de arriba hacia abajo:
                   </p>
-                  <ul className="mt-4 space-y-3 text-slate-300 font-mono text-sm bg-slate-900/50 p-4 rounded-lg">
+                  <ul className="mt-4 space-y-3 text-slate-300 font-mono text-base md:text-lg bg-slate-900/50 p-4 rounded-lg">
                     <li><KaTeX expresionTex="y_1 = \frac{b_1}{l_{11}}" /></li>
                     <li><KaTeX expresionTex="y_2 = \frac{b_2 - l_{21}y_1}{l_{22}}" /></li>
                     <li><KaTeX expresionTex="y_3 = \frac{b_3 - l_{31}y_1 - l_{32}y_2}{l_{33}}" /></li>
@@ -403,7 +402,7 @@ export default function PaginaCroutTeoria() {
                     Con <KaTeX expresionTex="\vec{y}" /> ya conocido, y siendo <KaTeX expresionTex="\underline{\underline{U}}" /> triangular
                     superior, se despeja de abajo hacia arriba:
                   </p>
-                  <ul className="mt-4 space-y-3 text-slate-300 font-mono text-sm bg-slate-900/50 p-4 rounded-lg">
+                  <ul className="mt-4 space-y-3 text-slate-300 font-mono text-base md:text-lg bg-slate-900/50 p-4 rounded-lg">
                     <li><KaTeX expresionTex="x_3 = y_3" /></li>
                     <li><KaTeX expresionTex="x_2 = y_2 - u_{23}x_3" /></li>
                     <li><KaTeX expresionTex="x_1 = y_1 - u_{12}x_2 - u_{13}x_3" /></li>
@@ -549,8 +548,18 @@ export default function PaginaCroutTeoria() {
                       <PasoCalculadora numero={2} titulo="Factorización: cálculo de L y U" color="border-yellow-500">
                         <p className="text-slate-300 text-sm leading-relaxed">
                           Se alterna una columna de L y una fila de U, en ese orden, porque cada entrada depende de las
-                          calculadas antes: <KaTeX expresionTex={String.raw`l_{ik} = a_{ik} - \sum_{p=1}^{k-1} l_{ip}u_{pk}`} /> y <KaTeX expresionTex={String.raw`u_{kj} = \frac{a_{kj} - \sum_{p=1}^{k-1} l_{kp}u_{pj}}{l_{kk}}`} />.
+                          calculadas antes:
                         </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-slate-950/60 rounded-xl border border-slate-700/50 p-4 desplazamiento-formula">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-yellow-400 mb-2">Expresiones de cálculo de elementos de L</p>
+                            <KaTeX expresionTex={String.raw`l_{ik} = a_{ik} - \sum_{p=1}^{k-1} l_{ip}u_{pk}`} enBloque={true} />
+                          </div>
+                          <div className="bg-slate-950/60 rounded-xl border border-slate-700/50 p-4 desplazamiento-formula">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-green-400 mb-2">Expresiones de cálculo de elementos de U</p>
+                            <KaTeX expresionTex={String.raw`u_{kj} = \frac{a_{kj} - \sum_{p=1}^{k-1} l_{kp}u_{pj}}{l_{kk}}`} enBloque={true} />
+                          </div>
+                        </div>
                         <ListaPasos pasos={resultados.pasosFactorizacion} />
                       </PasoCalculadora>
 

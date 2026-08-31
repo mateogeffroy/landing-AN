@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import KaTeX from './KaTeX';
 
 interface Celda {
@@ -15,7 +15,6 @@ interface EcuacionCrout {
   c: number;
   matriz: 'L' | 'U';
   partida: string;
-  nota: string;
   despeje?: string[];
   final: string;
 }
@@ -26,9 +25,23 @@ export default function FactorizacionInteractiva() {
   // Sólo un desarrollo abierto a la vez: se despliega como panel flotante sobre las tarjetas
   // de abajo, así abrir uno no empuja ni estira al resto de la fila de la grilla.
   const [abierta, setAbierta] = useState<string | null>(null);
+  const contenedorEcuacionesRef = useRef<HTMLDivElement>(null);
 
   // El elemento activo es el que está bloqueado, o en su defecto, el que tiene hover.
   const active = locked || hovered;
+
+  // Cierra el desarrollo abierto al hacer clic fuera de su tarjeta.
+  useEffect(() => {
+    if (!abierta) return;
+    const manejarClickFuera = (evento: MouseEvent) => {
+      const tarjetaAbierta = contenedorEcuacionesRef.current?.querySelector(`[data-eq-id="${abierta}"]`);
+      if (tarjetaAbierta && !tarjetaAbierta.contains(evento.target as Node)) {
+        setAbierta(null);
+      }
+    };
+    document.addEventListener('mousedown', manejarClickFuera);
+    return () => document.removeEventListener('mousedown', manejarClickFuera);
+  }, [abierta]);
 
   const toggleLock = (r: number, c: number) => {
     if (locked?.r === r && locked?.c === c) {
@@ -68,58 +81,51 @@ export default function FactorizacionInteractiva() {
 
   // Cada ecuación surge de igualar una celda de A con el producto (fila de L) . (columna de U).
   // "partida" es esa igualdad tal cual sale de multiplicar las matrices; "despeje" son los pasos
-  // algebraicos para aislar la incógnita; "final" es la fórmula de cálculo ya utilizada por la calculadora.
+  // algebraicos intermedios para aislar la incógnita; "final" es la fórmula de cálculo ya
+  // utilizada por la calculadora. El panel de desarrollo muestra esta cadena tal cual, sin texto.
   const ecuacionesOrdenadas: EcuacionCrout[] = [
     {
       id: '0-0', num: 1, r: 0, c: 0, matriz: 'L',
       partida: `\\textcolor{${cL}}{l_{11}} \\cdot 1 = \\textcolor{${cA}}{a_{11}}`,
-      nota: 'Fila 1 de L por columna 1 de U: como esa columna vale (1, 0, 0), el producto tiene un solo término.',
       final: `\\textcolor{${cL}}{l_{11}} = \\textcolor{${cA}}{a_{11}}`,
     },
     {
       id: '1-0', num: 2, r: 1, c: 0, matriz: 'L',
       partida: `\\textcolor{${cL}}{l_{21}} \\cdot 1 = \\textcolor{${cA}}{a_{21}}`,
-      nota: 'Fila 2 de L por columna 1 de U: mismo caso, un único término no nulo.',
       final: `\\textcolor{${cL}}{l_{21}} = \\textcolor{${cA}}{a_{21}}`,
     },
     {
       id: '2-0', num: 3, r: 2, c: 0, matriz: 'L',
       partida: `\\textcolor{${cL}}{l_{31}} \\cdot 1 = \\textcolor{${cA}}{a_{31}}`,
-      nota: 'Fila 3 de L por columna 1 de U: se repite el patrón de la primera columna.',
       final: `\\textcolor{${cL}}{l_{31}} = \\textcolor{${cA}}{a_{31}}`,
     },
     {
       id: '0-1', num: 4, r: 0, c: 1, matriz: 'U',
       partida: `\\textcolor{${cL}}{l_{11}} \\cdot \\textcolor{${cU}}{u_{12}} = \\textcolor{${cA}}{a_{12}}`,
-      nota: 'Fila 1 de L por columna 2 de U.',
       despeje: [`\\textcolor{${cU}}{u_{12}} = \\frac{\\textcolor{${cA}}{a_{12}}}{\\textcolor{${cL}}{l_{11}}}`],
       final: `\\textcolor{${cU}}{u_{12}} = \\frac{\\textcolor{${cA}}{a_{12}}}{\\textcolor{${cL}}{l_{11}}}`,
     },
     {
       id: '0-2', num: 5, r: 0, c: 2, matriz: 'U',
       partida: `\\textcolor{${cL}}{l_{11}} \\cdot \\textcolor{${cU}}{u_{13}} = \\textcolor{${cA}}{a_{13}}`,
-      nota: 'Fila 1 de L por columna 3 de U.',
       despeje: [`\\textcolor{${cU}}{u_{13}} = \\frac{\\textcolor{${cA}}{a_{13}}}{\\textcolor{${cL}}{l_{11}}}`],
       final: `\\textcolor{${cU}}{u_{13}} = \\frac{\\textcolor{${cA}}{a_{13}}}{\\textcolor{${cL}}{l_{11}}}`,
     },
     {
       id: '1-1', num: 6, r: 1, c: 1, matriz: 'L',
       partida: `\\textcolor{${cL}}{l_{21}}\\textcolor{${cU}}{u_{12}} + \\textcolor{${cL}}{l_{22}} \\cdot 1 = \\textcolor{${cA}}{a_{22}}`,
-      nota: 'Fila 2 de L por columna 2 de U: ahora aparecen dos términos porque ambas filas/columnas ya tienen dos entradas no nulas.',
       despeje: [`\\textcolor{${cL}}{l_{22}} = \\textcolor{${cA}}{a_{22}} - \\textcolor{${cL}}{l_{21}}\\textcolor{${cU}}{u_{12}}`],
       final: `\\textcolor{${cL}}{l_{22}} = \\textcolor{${cA}}{a_{22}} - \\textcolor{${cL}}{l_{21}}\\textcolor{${cU}}{u_{12}}`,
     },
     {
       id: '2-1', num: 7, r: 2, c: 1, matriz: 'L',
       partida: `\\textcolor{${cL}}{l_{31}}\\textcolor{${cU}}{u_{12}} + \\textcolor{${cL}}{l_{32}} = \\textcolor{${cA}}{a_{32}}`,
-      nota: 'Fila 3 de L por columna 2 de U.',
       despeje: [`\\textcolor{${cL}}{l_{32}} = \\textcolor{${cA}}{a_{32}} - \\textcolor{${cL}}{l_{31}}\\textcolor{${cU}}{u_{12}}`],
       final: `\\textcolor{${cL}}{l_{32}} = \\textcolor{${cA}}{a_{32}} - \\textcolor{${cL}}{l_{31}}\\textcolor{${cU}}{u_{12}}`,
     },
     {
       id: '1-2', num: 8, r: 1, c: 2, matriz: 'U',
       partida: `\\textcolor{${cL}}{l_{21}}\\textcolor{${cU}}{u_{13}} + \\textcolor{${cL}}{l_{22}}\\textcolor{${cU}}{u_{23}} = \\textcolor{${cA}}{a_{23}}`,
-      nota: 'Fila 2 de L por columna 3 de U. Acá la incógnita queda multiplicada por l_{22}, así que hace falta despejar.',
       despeje: [
         `\\textcolor{${cL}}{l_{22}}\\textcolor{${cU}}{u_{23}} = \\textcolor{${cA}}{a_{23}} - \\textcolor{${cL}}{l_{21}}\\textcolor{${cU}}{u_{13}}`,
         `\\textcolor{${cU}}{u_{23}} = \\frac{\\textcolor{${cA}}{a_{23}} - \\textcolor{${cL}}{l_{21}}\\textcolor{${cU}}{u_{13}}}{\\textcolor{${cL}}{l_{22}}}`,
@@ -129,7 +135,6 @@ export default function FactorizacionInteractiva() {
     {
       id: '2-2', num: 9, r: 2, c: 2, matriz: 'L',
       partida: `\\textcolor{${cL}}{l_{31}}\\textcolor{${cU}}{u_{13}} + \\textcolor{${cL}}{l_{32}}\\textcolor{${cU}}{u_{23}} + \\textcolor{${cL}}{l_{33}} \\cdot 1 = \\textcolor{${cA}}{a_{33}}`,
-      nota: 'Fila 3 de L por columna 3 de U: es la última celda, por eso combina todos los términos calculados antes.',
       despeje: [`\\textcolor{${cL}}{l_{33}} = \\textcolor{${cA}}{a_{33}} - \\textcolor{${cL}}{l_{31}}\\textcolor{${cU}}{u_{13}} - \\textcolor{${cL}}{l_{32}}\\textcolor{${cU}}{u_{23}}`],
       final: `\\textcolor{${cL}}{l_{33}} = \\textcolor{${cA}}{a_{33}} - \\textcolor{${cL}}{l_{31}}\\textcolor{${cU}}{u_{13}} - \\textcolor{${cL}}{l_{32}}\\textcolor{${cU}}{u_{23}}`,
     },
@@ -229,9 +234,9 @@ export default function FactorizacionInteractiva() {
               Fórmulas para calcular L y U
             </h3>
             <p className="text-sm text-slate-400">
-              Presione sobre una celda de la Matriz A o sobre una ecuación para <strong className="text-blue-400">fijar la selección</strong>, o abra
-              <span className="text-blue-300 font-bold"> el desarrollo ▸ </span>
-              de cada fórmula para ver de dónde sale.
+              Presione sobre una celda de la Matriz A o sobre una ecuación para <strong className="text-blue-400">fijar la selección</strong>. El
+              <span className="text-blue-300 font-bold"> botón con la flecha ▾ </span>
+              de cada tarjeta muestra el desarrollo de la fórmula, para ver de dónde sale.
             </p>
           </div>
           {locked && (
@@ -244,27 +249,27 @@ export default function FactorizacionInteractiva() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+        <div ref={contenedorEcuacionesRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
           {ecuacionesOrdenadas.map((eq) => {
             const isActive = active?.r === eq.r && active?.c === eq.c;
             const isLocked = locked?.r === eq.r && locked?.c === eq.c;
             const estaAbierta = abierta === eq.id;
-            const colorMatriz = eq.matriz === 'L' ? 'border-yellow-500/60' : 'border-green-500/60';
             return (
               <div
                 key={eq.id}
+                data-eq-id={eq.id}
                 onMouseEnter={() => setHovered({ r: eq.r, c: eq.c })}
                 onMouseLeave={() => setHovered(null)}
                 onClick={() => toggleLock(eq.r, eq.c)}
-                className={`relative rounded-lg border border-l-4 cursor-pointer transition-colors duration-300 ${colorMatriz} ${
+                className={`group relative rounded-lg border border-l-4 cursor-pointer transition-colors duration-300 ${
                   estaAbierta ? 'z-20' : 'z-0'
                 } ${
                   isActive
                     ? `bg-blue-900/30 border-blue-500/50 shadow-[0_4px_15px_rgba(59,130,246,0.15)] ${isLocked ? 'ring-2 ring-blue-500' : ''}`
-                    : 'bg-slate-900/50 border-slate-700/50 opacity-80 hover:opacity-100'
+                    : 'bg-slate-900/50 border-slate-700/50'
                 }`}
               >
-                <div className="p-4 flex items-center justify-between gap-2">
+                <div className={`p-4 flex items-center justify-between gap-2 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'}`}>
                   <div className="flex-1 min-w-0">
                     <span className={`block text-[11px] uppercase font-black tracking-widest mb-2 ${isActive ? 'text-blue-400' : 'text-slate-500'}`}>
                       Ecuación {eq.num} · {eq.matriz}
@@ -296,32 +301,30 @@ export default function FactorizacionInteractiva() {
                   <div className="overflow-hidden">
                     <div
                       onClick={(evento) => evento.stopPropagation()}
-                      className="relative cursor-default rounded-xl border border-blue-500/40 bg-slate-950 p-4 space-y-3 shadow-2xl shadow-black/70"
+                      className="relative cursor-default rounded-xl border border-blue-500/40 bg-slate-950 p-4 shadow-2xl shadow-black/70"
                     >
                       {/* Pico que ancla el panel a la flecha que lo abrió. */}
                       <span className="absolute -top-[7px] right-8 w-3 h-3 rotate-45 border-t border-l border-blue-500/40 bg-slate-950" />
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">1. Producto (fila de L) · (columna de U)</p>
-                        <div className="text-sm"><KaTeX expresionTex={eq.partida} /></div>
-                        <p className="text-xs text-slate-400 mt-2">{eq.nota}</p>
-                      </div>
-
-                      {eq.despeje && (
-                        <div className="border-t border-slate-700/50 pt-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">2. Despeje de la incógnita</p>
-                          <div className="space-y-2">
-                            {eq.despeje.map((paso, indice) => (
-                              <div key={indice} className="text-sm">
+                      <div className="flex flex-col items-center gap-1.5">
+                        {[eq.partida, ...(eq.despeje ?? []), eq.final].map((paso, indice, pasos) => {
+                          const esFinal = indice === pasos.length - 1;
+                          return (
+                            <div key={indice} className="flex flex-col items-center gap-1.5 w-full">
+                              {indice > 0 && (
+                                <svg viewBox="0 0 20 20" fill="none" className="w-3.5 h-3.5 text-slate-600 shrink-0">
+                                  <path d="M10 3v13m-5.5-5.5l5.5 5.5 5.5-5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                              <div
+                                className={`w-full text-center text-sm rounded-lg px-3 py-2 ${
+                                  esFinal ? 'bg-emerald-500/10 border border-emerald-500/30' : ''
+                                }`}
+                              >
                                 <KaTeX expresionTex={paso} />
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="border-t border-slate-700/50 pt-3">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Fórmula de cálculo</p>
-                        <div className="text-sm"><KaTeX expresionTex={eq.final} /></div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
