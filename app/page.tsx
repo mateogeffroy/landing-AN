@@ -22,6 +22,14 @@ const projects = [
     link: '/crout',
     tags: ['Álgebra Lineal', 'React', 'Ecuaciones'],
   },
+  {
+    numero: '03',
+    title: 'Segunda exposición grupal: Ajuste por Mínimos Cuadrados',
+    description: 'Resolución del Caso 2: crecimiento inicial de cuatro cultivos bacterianos. Separación de clústeres, comparación de los modelos del apunte, ajuste paso a paso por mínimos cuadrados, bondad r², análisis de residuos y límites de la extrapolación.',
+    icon: '∿',
+    link: '/minimos-cuadrados',
+    tags: ['Regresión', 'Recharts', 'Residuos'],
+  },
 ];
 
 const integrantes = [
