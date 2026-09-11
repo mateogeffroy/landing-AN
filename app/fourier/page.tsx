@@ -303,25 +303,25 @@ export default function PaginaFourier() {
       <section className="flex-1 max-w-6xl mx-auto px-4 py-24 w-full">
 
         <div className="text-center mb-6">
-          <h1 className="text-4xl md:text-[3.5rem] font-extrabold mb-4 bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 text-transparent bg-clip-text leading-tight">
+          <h1 className="text-4xl md:text-[3.5rem] font-extrabold mb-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 dark:from-blue-400 dark:via-indigo-400 dark:to-emerald-400 text-transparent bg-clip-text leading-tight">
             Calculadora de Serie de Fourier
           </h1>
-          <p className="text-slate-400 font-medium tracking-tight">Análisis Numérico · UTN FRLP</p>
+          <p className="text-slate-600 dark:text-slate-400 font-medium tracking-tight">Análisis Numérico · UTN FRLP</p>
         </div>
 
         {/* CUERPO: guía lateral + contenido */}
         <div className="grid grid-cols-1 lg:grid-cols-[9rem_1fr] gap-4 lg:gap-10 mt-10">
 
           {/* GUÍA LATERAL (sólo desktop) */}
-          <nav className="hidden lg:flex flex-col gap-8 sticky top-32 self-start h-fit pr-2 border-r border-slate-800">
+          <nav className="hidden lg:flex flex-col gap-8 sticky top-32 self-start h-fit pr-2 border-r border-slate-200 dark:border-slate-800">
             {navegacion.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
                 onClick={(evento) => desplazarHaciaAncla(evento, item.href)}
-                className="group flex items-center gap-3 text-slate-500 hover:text-slate-200 transition-colors"
+                className="group flex items-center gap-3 text-slate-600 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
               >
-                <GlifoMatriz celdas={item.patron} className="text-slate-600 group-hover:text-blue-400 transition-colors shrink-0" />
+                <GlifoMatriz celdas={item.patron} className="text-slate-400 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors shrink-0" />
                 <span className="text-[10px] font-black uppercase tracking-widest leading-tight">
                   {item.label}
                 </span>
@@ -332,13 +332,13 @@ export default function PaginaFourier() {
           <div className="space-y-8 min-w-0">
 
         <RevelarAlEntrar>
-        <div id="definicion" className="scroll-mt-28 bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700/50 pb-5">
-            <h2 className="text-2xl font-bold text-white tracking-wide">Definición de la Función</h2>
-            <div className="flex bg-slate-900 p-1.5 rounded-xl border border-slate-700 shadow-inner">
-              <button onClick={() => setModoIngreso('simple')} className={`px-5 py-2 text-xs font-black rounded-lg transition-all ${modoIngreso === 'simple' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>SIMPLE</button>
-              <button onClick={() => setModoIngreso('piecewise')} className={`px-5 py-2 text-xs font-black rounded-lg transition-all ${modoIngreso === 'piecewise' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>A TROZOS</button>
-              <button onClick={() => setModoIngreso('preset')} className={`px-5 py-2 text-xs font-black rounded-lg transition-all ${modoIngreso === 'preset' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>PRECARGADA</button>
+        <div id="definicion" className="scroll-mt-28 bg-white dark:bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 shadow-xl space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 dark:border-slate-700/50 pb-5">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">Definición de la Función</h2>
+            <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
+              <button onClick={() => setModoIngreso('simple')} className={`px-5 py-2 text-xs font-black rounded-lg transition-all ${modoIngreso === 'simple' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>SIMPLE</button>
+              <button onClick={() => setModoIngreso('piecewise')} className={`px-5 py-2 text-xs font-black rounded-lg transition-all ${modoIngreso === 'piecewise' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>A TROZOS</button>
+              <button onClick={() => setModoIngreso('preset')} className={`px-5 py-2 text-xs font-black rounded-lg transition-all ${modoIngreso === 'preset' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>PRECARGADA</button>
             </div>
           </div>
 
@@ -346,16 +346,16 @@ export default function PaginaFourier() {
             {modoIngreso === 'simple' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
-                  <label className="text-[10px] font-black text-blue-300 uppercase mb-2 block tracking-widest">Expresión f(x)</label>
+                  <label className="text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase mb-2 block tracking-widest">Expresión f(x)</label>
                   <EntradaMatematica valorLatex={latexExpresion} alCambiarMatematica={(l, a) => { setLatexExpresion(l); setExpresion(a); }} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-black text-blue-300 uppercase mb-2 block tracking-widest">x mín</label>
+                    <label className="text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase mb-2 block tracking-widest">x mín</label>
                     <EntradaMatematica valorLatex={minimoLatex} alCambiarMatematica={(l, a) => { setMinimoLatex(l); setMinimoExpr(a); }} />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-blue-300 uppercase mb-2 block tracking-widest">x máx</label>
+                    <label className="text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase mb-2 block tracking-widest">x máx</label>
                     <EntradaMatematica valorLatex={maximoLatex} alCambiarMatematica={(l, a) => { setMaximoLatex(l); setMaximoExpr(a); }} />
                   </div>
                 </div>
@@ -363,7 +363,7 @@ export default function PaginaFourier() {
             )}
             {modoIngreso === 'piecewise' && <EditorFuncionTrozos tramos={tramos} alCambiarTramos={setTramos} />}
             {modoIngreso === 'preset' && <MenuDesplegableEjercicios alSeleccionarEjercicio={seleccionarPredefinida} />}
-            {errorMatematico && <p className="text-red-400 text-xs mt-4 font-bold bg-red-400/10 p-3 rounded-lg border border-red-400/20">{errorMatematico}</p>}
+            {errorMatematico && <p className="text-red-700 dark:text-red-400 text-xs mt-4 font-bold bg-red-400/10 p-3 rounded-lg border border-red-400/20">{errorMatematico}</p>}
           </div>
         </div>
         </RevelarAlEntrar>
@@ -393,14 +393,14 @@ export default function PaginaFourier() {
         </RevelarAlEntrar>
 
         <RevelarAlEntrar retraso={240}>
-        <div id="aproximacion" className="scroll-mt-28 bg-slate-800/30 rounded-2xl p-8 border border-slate-700 shadow-xl space-y-4">
-          <h2 className="text-xl font-bold text-white border-l-4 border-indigo-500 pl-4">Aproximación de la Serie</h2>
-          <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4">Expresión analítica resultante (Máx. 5 términos)</p>
-          <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700/50 overflow-x-auto text-center shadow-inner">
+        <div id="aproximacion" className="scroll-mt-28 bg-slate-50 dark:bg-slate-800/30 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white border-l-4 border-indigo-500 pl-4">Aproximación de la Serie</h2>
+          <p className="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest mb-4">Expresión analítica resultante (Máx. 5 términos)</p>
+          <div className="bg-slate-50 dark:bg-slate-900/80 p-6 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-x-auto text-center shadow-inner">
              <KaTeX expresionTex={sumatoriaFinalTex} enBloque={true} />
           </div>
-          <div className="pt-4 mt-4 border-t border-slate-700/50 flex flex-col items-center">
-             <p className="text-[10px] text-slate-500 uppercase font-bold mb-2 tracking-widest">Definición General</p>
+          <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50 flex flex-col items-center">
+             <p className="text-[10px] text-slate-600 dark:text-slate-500 uppercase font-bold mb-2 tracking-widest">Definición General</p>
              <KaTeX expresionTex={String.raw`f(t)=\frac{1}{2}\cdot a_0+\sum_{n=1}^{N}[a_n\cdot \cos(n\omega t)+b_n\cdot \sin(n\omega t)]`} />
           </div>
         </div>

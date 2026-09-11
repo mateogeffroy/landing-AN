@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Literata } from 'next/font/google';
 import DesplazamientoSuave from '@/src/components/DesplazamientoSuave';
+import { scriptInicialTema } from '@/src/components/ThemeToggle';
 import './globals.css';
 
 // Literata: serif diseñada para lectura extensa (libros y ebooks).
@@ -26,7 +27,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={literata.variable}>
-      <body className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen font-serif">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: scriptInicialTema }} />
+      </head>
+      <body className="bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-white min-h-screen font-serif">
         <DesplazamientoSuave />
         {children}
       </body>

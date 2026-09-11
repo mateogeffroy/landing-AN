@@ -143,12 +143,12 @@ export default function FactorizacionInteractiva() {
   return (
     <div className="w-full space-y-8">
       {/* Visualizador de Matrices */}
-      <div className="bg-slate-900/80 p-8 rounded-xl border border-slate-700/50 shadow-inner flex flex-col md:flex-row items-center justify-center gap-6">
+      <div className="bg-slate-50 dark:bg-slate-900/80 p-8 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner flex flex-col md:flex-row items-center justify-center gap-6">
 
         {/* Matriz A (Interactiva) */}
         <div className="flex flex-col items-center">
-          <p className="text-[10px] font-black text-red-400 mb-3 uppercase tracking-widest">Matriz A</p>
-          <div className="grid grid-rows-3 gap-2 border-l-2 border-r-2 border-slate-500 p-2 rounded-[4px] bg-slate-900/50">
+          <p className="text-[10px] font-black text-red-700 dark:text-red-400 mb-3 uppercase tracking-widest">Matriz A</p>
+          <div className="grid grid-rows-3 gap-2 border-l-2 border-r-2 border-slate-300 dark:border-slate-500 p-2 rounded-[4px] bg-slate-100 dark:bg-slate-900/50">
             {matrizA.map((fila, r) => (
               <div key={r} className="grid grid-cols-3 gap-2">
                 {fila.map((celda, c) => {
@@ -163,7 +163,7 @@ export default function FactorizacionInteractiva() {
                       className={`w-14 h-14 flex items-center justify-center rounded-lg cursor-pointer transition-all duration-300 ${
                         isActive
                           ? `bg-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.4)] ${isLocked ? 'ring-2 ring-blue-500 bg-blue-500/30 scale-110' : 'scale-105'}`
-                          : 'bg-slate-800 hover:bg-slate-700'
+                          : 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700'
                       }`}
                     >
                       <KaTeX expresionTex={celda} />
@@ -175,12 +175,12 @@ export default function FactorizacionInteractiva() {
           </div>
         </div>
 
-        <div className="text-3xl text-slate-500 font-black hidden md:block">=</div>
+        <div className="text-3xl text-slate-600 dark:text-slate-500 font-black hidden md:block">=</div>
 
         {/* Matriz L */}
         <div className="flex flex-col items-center">
-          <p className="text-[10px] font-black text-yellow-400 mb-3 uppercase tracking-widest">Matriz L</p>
-          <div className="grid grid-rows-3 gap-2 border-l-2 border-r-2 border-slate-500 p-2 rounded-[4px] bg-slate-900/50">
+          <p className="text-[10px] font-black text-yellow-700 dark:text-yellow-400 mb-3 uppercase tracking-widest">Matriz L</p>
+          <div className="grid grid-rows-3 gap-2 border-l-2 border-r-2 border-slate-300 dark:border-slate-500 p-2 rounded-[4px] bg-slate-100 dark:bg-slate-900/50">
             {matrizL.map((fila, r) => (
               <div key={r} className="grid grid-cols-3 gap-2">
                 {fila.map((celda, c) => (
@@ -189,7 +189,7 @@ export default function FactorizacionInteractiva() {
                     className={`w-14 h-14 flex items-center justify-center rounded-lg transition-all duration-300 ${
                       active?.r === r
                         ? 'bg-blue-500/20 ring-1 ring-blue-400/50'
-                        : 'bg-slate-800'
+                        : 'bg-slate-200 dark:bg-slate-800'
                     }`}
                   >
                     <KaTeX expresionTex={celda} />
@@ -200,12 +200,12 @@ export default function FactorizacionInteractiva() {
           </div>
         </div>
 
-        <div className="text-3xl text-slate-500 font-black hidden md:block">×</div>
+        <div className="text-3xl text-slate-600 dark:text-slate-500 font-black hidden md:block">×</div>
 
         {/* Matriz U */}
         <div className="flex flex-col items-center">
-          <p className="text-[10px] font-black text-green-400 mb-3 uppercase tracking-widest">Matriz U</p>
-          <div className="grid grid-rows-3 gap-2 border-l-2 border-r-2 border-slate-500 p-2 rounded-[4px] bg-slate-900/50">
+          <p className="text-[10px] font-black text-green-700 dark:text-green-400 mb-3 uppercase tracking-widest">Matriz U</p>
+          <div className="grid grid-rows-3 gap-2 border-l-2 border-r-2 border-slate-300 dark:border-slate-500 p-2 rounded-[4px] bg-slate-100 dark:bg-slate-900/50">
             {matrizU.map((fila, r) => (
               <div key={r} className="grid grid-cols-3 gap-2">
                 {fila.map((celda, c) => (
@@ -214,7 +214,7 @@ export default function FactorizacionInteractiva() {
                     className={`w-14 h-14 flex items-center justify-center rounded-lg transition-all duration-300 ${
                       active?.c === c
                         ? 'bg-blue-500/20 ring-1 ring-blue-400/50'
-                        : 'bg-slate-800'
+                        : 'bg-slate-200 dark:bg-slate-800'
                     }`}
                   >
                     <KaTeX expresionTex={celda} />
@@ -227,22 +227,22 @@ export default function FactorizacionInteractiva() {
       </div>
 
       {/* Fórmulas para calcular L y U */}
-      <div className="bg-slate-800/80 rounded-xl border border-slate-700 p-6 shadow-xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-700/50 pb-4">
+      <div className="bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-200 dark:border-slate-700/50 pb-4">
           <div>
-            <h3 className="text-lg font-bold text-white border-l-4 border-blue-500 pl-3 mb-1">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-3 mb-1">
               Fórmulas para calcular L y U
             </h3>
-            <p className="text-sm text-slate-400">
-              Presione sobre una celda de la Matriz A o sobre una ecuación para <strong className="text-blue-400">fijar la selección</strong>. El
-              <span className="text-blue-300 font-bold"> botón con la flecha ▾ </span>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Presione sobre una celda de la Matriz A o sobre una ecuación para <strong className="text-blue-700 dark:text-blue-400">fijar la selección</strong>. El
+              <span className="text-blue-700 dark:text-blue-300 font-bold"> botón con la flecha ▾ </span>
               de cada tarjeta muestra el desarrollo de la fórmula, para ver de dónde sale.
             </p>
           </div>
           {locked && (
             <button
               onClick={() => setLocked(null)}
-              className="px-4 py-2 text-xs font-bold bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-bold bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition-colors"
             >
               Quitar selección
             </button>
@@ -265,13 +265,13 @@ export default function FactorizacionInteractiva() {
                   estaAbierta ? 'z-20' : 'z-0'
                 } ${
                   isActive
-                    ? `bg-blue-900/30 border-blue-500/50 shadow-[0_4px_15px_rgba(59,130,246,0.15)] ${isLocked ? 'ring-2 ring-blue-500' : ''}`
-                    : 'bg-slate-900/50 border-slate-700/50'
+                    ? `bg-blue-50 dark:bg-blue-900/30 border-blue-500/50 shadow-[0_4px_15px_rgba(59,130,246,0.15)] ${isLocked ? 'ring-2 ring-blue-500' : ''}`
+                    : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700/50'
                 }`}
               >
                 <div className={`p-4 flex items-center justify-between gap-2 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'}`}>
                   <div className="flex-1 min-w-0">
-                    <span className={`block text-[11px] uppercase font-black tracking-widest mb-2 ${isActive ? 'text-blue-400' : 'text-slate-500'}`}>
+                    <span className={`block text-[11px] uppercase font-black tracking-widest mb-2 ${isActive ? 'text-blue-500 dark:text-blue-400' : 'text-slate-600 dark:text-slate-500'}`}>
                       Ecuación {eq.num} · {eq.matriz}
                     </span>
                     <div className="text-sm md:text-base">
@@ -284,7 +284,7 @@ export default function FactorizacionInteractiva() {
                     aria-expanded={estaAbierta}
                     aria-label={estaAbierta ? 'Ocultar desarrollo' : 'Ver desarrollo'}
                     className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 ease-out hover:bg-blue-500/10 hover:ring-2 hover:ring-blue-400/40 ${
-                      estaAbierta ? 'text-blue-300 bg-blue-500/10 ring-2 ring-blue-400/40' : 'text-slate-400'
+                      estaAbierta ? 'text-blue-700 dark:text-blue-300 bg-blue-500/10 ring-2 ring-blue-400/40' : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     <svg viewBox="0 0 20 20" fill="none" className={`w-4 h-4 transition-transform duration-300 ease-out ${estaAbierta ? 'rotate-180' : ''}`}>
@@ -301,17 +301,17 @@ export default function FactorizacionInteractiva() {
                   <div className="overflow-hidden">
                     <div
                       onClick={(evento) => evento.stopPropagation()}
-                      className="relative cursor-default rounded-xl border border-blue-500/40 bg-slate-950 p-4 shadow-2xl shadow-black/70"
+                      className="relative cursor-default rounded-xl border border-blue-500/40 bg-white dark:bg-slate-950 p-4 shadow-2xl shadow-black/20 dark:shadow-black/70"
                     >
                       {/* Pico que ancla el panel a la flecha que lo abrió. */}
-                      <span className="absolute -top-[7px] right-8 w-3 h-3 rotate-45 border-t border-l border-blue-500/40 bg-slate-950" />
+                      <span className="absolute -top-[7px] right-8 w-3 h-3 rotate-45 border-t border-l border-blue-500/40 bg-white dark:bg-slate-950" />
                       <div className="flex flex-col items-center gap-1.5">
                         {[eq.partida, ...(eq.despeje ?? []), eq.final].map((paso, indice, pasos) => {
                           const esFinal = indice === pasos.length - 1;
                           return (
                             <div key={indice} className="flex flex-col items-center gap-1.5 w-full">
                               {indice > 0 && (
-                                <svg viewBox="0 0 20 20" fill="none" className="w-3.5 h-3.5 text-slate-600 shrink-0">
+                                <svg viewBox="0 0 20 20" fill="none" className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0">
                                   <path d="M10 3v13m-5.5-5.5l5.5 5.5 5.5-5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               )}

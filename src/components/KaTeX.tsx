@@ -71,7 +71,7 @@ export default function KaTeX({ expresionTex, enBloque = false }: PropiedadesKaT
   }, [expresionTex, enBloque, estaListo]);
 
   // Renderizado condicional de un indicador de carga ligero mientras se descargan los recursos CDN.
-  if (!estaListo) return <span className="text-slate-500 text-xs">...</span>;
+  if (!estaListo) return <span className="text-slate-600 dark:text-slate-500 text-xs">...</span>;
   
   return <span ref={referenciaContenedor} />;
 }

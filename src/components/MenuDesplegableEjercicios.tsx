@@ -91,8 +91,8 @@ export default function MenuDesplegableEjercicios({ alSeleccionarEjercicio }: Pr
   }, []);
 
   return (
-    <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 relative h-full flex flex-col justify-center" ref={referenciaMenu}>
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-blue-400 mb-3 uppercase tracking-wider">
+    <div className="bg-white dark:bg-slate-800/50 rounded-lg p-6 border border-slate-200 dark:border-slate-700 relative h-full flex flex-col justify-center" ref={referenciaMenu}>
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-blue-700 dark:text-blue-400 mb-3 uppercase tracking-wider">
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
@@ -101,14 +101,14 @@ export default function MenuDesplegableEjercicios({ alSeleccionarEjercicio }: Pr
       
       <button
         onClick={() => setEstaAbierto(!estaAbierto)}
-        className="w-full flex justify-between items-center p-3 bg-slate-900 border border-slate-600 rounded-lg hover:border-blue-500 transition text-slate-300"
+        className="w-full flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg hover:border-blue-500 transition text-slate-600 dark:text-slate-300"
       >
         <span>Seleccionar inciso...</span>
         <span className="text-xs">{estaAbierto ? '▲' : '▼'}</span>
       </button>
 
       {estaAbierto && (
-        <div className="absolute top-[90px] left-0 w-full bg-slate-900 border border-slate-600 rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-[90px] left-0 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
           {EJERCICIOS_PREDEFINIDOS.map((ejercicio) => (
             <button
               key={ejercicio.etiqueta}
@@ -116,11 +116,11 @@ export default function MenuDesplegableEjercicios({ alSeleccionarEjercicio }: Pr
                 alSeleccionarEjercicio(ejercicio);
                 setEstaAbierto(false);
               }}
-              className="w-full text-left py-4 px-5 hover:bg-slate-800 border-b border-slate-700/50 transition group flex items-center gap-4"
+              className="w-full text-left py-4 px-5 hover:bg-slate-100 dark:hover:bg-slate-800 border-b border-slate-200 dark:border-slate-700/50 transition group flex items-center gap-4"
             >
-              <span className="text-blue-400 font-bold text-lg min-w-[20px]">{ejercicio.etiqueta}</span>
+              <span className="text-blue-700 dark:text-blue-400 font-bold text-lg min-w-[20px]">{ejercicio.etiqueta}</span>
               {/* Reduccion del 10% en el escalado para asegurar que los bloques LaTeX grandes encajen correctamente */}
-              <div className="text-slate-300 group-hover:text-white pointer-events-none scale-[0.9] origin-left py-2">
+              <div className="text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white pointer-events-none scale-[0.9] origin-left py-2">
                 <KaTeX expresionTex={ejercicio.definicionLatex} />
               </div>
             </button>

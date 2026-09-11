@@ -22,9 +22,9 @@ const MarcaEjeXPersonalizada = ({ x, y, payload }: any) => {
   
   return (
     <g transform={`translate(${x},${y})`}>
-      <text 
-        x={0} y={0} dy={16} textAnchor="middle" 
-        fill={esValorElemental ? '#ffffff' : '#64748b'} 
+      <text
+        x={0} y={0} dy={16} textAnchor="middle"
+        className={esValorElemental ? 'fill-slate-900 dark:fill-white' : 'fill-slate-500 dark:fill-slate-500'}
         fontWeight={esValorElemental ? 800 : 400}
         fontSize={esValorElemental ? 13 : 11}
       >
@@ -52,28 +52,28 @@ export default function GraficoFourier({ datos, titulo, periodoL, periodoT, armo
   };
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-5 shadow-lg">
+    <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-6 mb-5 shadow-lg">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h3 className="text-xl md:text-2xl font-bold text-white pl-4 whitespace-nowrap">
+        <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white pl-4 whitespace-nowrap">
           {titulo || 'Gráfico de la Función'}
         </h3>
 
-        <div className="flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 w-full md:w-auto shadow-inner">
-          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Armónicos:</span>
+        <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 w-full md:w-auto shadow-inner">
+          <span className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">Armónicos:</span>
           <div className="flex items-center gap-1">
-            <button onClick={() => alCambiarArmonicos(Math.max(1, armonicos - 1))} className="text-slate-400 hover:text-white font-bold px-2 text-lg leading-none">-</button>
+            <button onClick={() => alCambiarArmonicos(Math.max(1, armonicos - 1))} className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-bold px-2 text-lg leading-none">-</button>
             <input 
               type="number" 
               value={armonicos} 
               onChange={evento => alCambiarArmonicos(Math.max(1, parseInt(evento.target.value) || 1))} 
-              className="w-10 bg-transparent text-center text-sm font-bold text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+              className="w-10 bg-transparent text-center text-sm font-bold text-slate-900 dark:text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
             />
-            <button onClick={() => alCambiarArmonicos(armonicos + 1)} className="text-slate-400 hover:text-white font-bold px-2 text-lg leading-none">+</button>
+            <button onClick={() => alCambiarArmonicos(armonicos + 1)} className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-bold px-2 text-lg leading-none">+</button>
           </div>
           <input 
             type="range" min="1" max="100" value={armonicos} 
             onChange={evento => alCambiarArmonicos(parseInt(evento.target.value))} 
-            className="w-24 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 hidden sm:block" 
+            className="w-24 h-1 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 hidden sm:block" 
           />
         </div>
 
@@ -86,16 +86,16 @@ export default function GraficoFourier({ datos, titulo, periodoL, periodoT, armo
       </div>
 
       {/* Seccion de informacion tecnica del periodo y paridad */}
-      <div className="flex flex-wrap gap-4 md:gap-6 bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-2 mb-6 text-xs font-mono w-fit shadow-sm items-center">
-        <div><span className="text-slate-500 uppercase tracking-tighter mr-2">T:</span><span className="text-emerald-400 font-bold">{parseFloat(periodoT.toFixed(4))}</span></div>
-        <div><span className="text-slate-500 uppercase tracking-tighter mr-2">L:</span><span className="text-emerald-400 font-bold">{parseFloat(periodoL.toFixed(4))}</span></div>
-        <div><span className="text-slate-500 uppercase tracking-tighter mr-2">Rango:</span><span className="text-emerald-400 font-bold">[-{parseFloat(periodoL.toFixed(2))}, {parseFloat(periodoL.toFixed(2))}]</span></div>
+      <div className="flex flex-wrap gap-4 md:gap-6 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-lg px-4 py-2 mb-6 text-xs font-mono w-fit shadow-sm items-center">
+        <div><span className="text-slate-600 dark:text-slate-500 uppercase tracking-tighter mr-2">T:</span><span className="text-emerald-700 dark:text-emerald-400 font-bold">{parseFloat(periodoT.toFixed(4))}</span></div>
+        <div><span className="text-slate-600 dark:text-slate-500 uppercase tracking-tighter mr-2">L:</span><span className="text-emerald-700 dark:text-emerald-400 font-bold">{parseFloat(periodoL.toFixed(4))}</span></div>
+        <div><span className="text-slate-600 dark:text-slate-500 uppercase tracking-tighter mr-2">Rango:</span><span className="text-emerald-700 dark:text-emerald-400 font-bold">[-{parseFloat(periodoL.toFixed(2))}, {parseFloat(periodoL.toFixed(2))}]</span></div>
         
         {/* Badge de Paridad integrado a la derecha de los datos del periodo */}
-        <div className="border-l border-slate-700 pl-4 ml-2">
-          {paridad === 'par' && <span className="text-blue-400 font-bold uppercase tracking-widest text-[10px]">Función Par</span>}
-          {paridad === 'impar' && <span className="text-emerald-400 font-bold uppercase tracking-widest text-[10px]">Función Impar</span>}
-          {paridad === 'ninguna' && <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Sin Paridad</span>}
+        <div className="border-l border-slate-300 dark:border-slate-700 pl-4 ml-2">
+          {paridad === 'par' && <span className="text-blue-700 dark:text-blue-400 font-bold uppercase tracking-widest text-[10px]">Función Par</span>}
+          {paridad === 'impar' && <span className="text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-widest text-[10px]">Función Impar</span>}
+          {paridad === 'ninguna' && <span className="text-slate-600 dark:text-slate-500 font-bold uppercase tracking-widest text-[10px]">Sin Paridad</span>}
         </div>
       </div>
 

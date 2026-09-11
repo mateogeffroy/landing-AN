@@ -58,12 +58,12 @@ export default function EditorFuncionTrozos({
   };
 
   return (
-    <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 shadow-lg">
+    <div className="bg-white dark:bg-slate-800/50 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-lg">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold text-white">Función a Trozos</h3>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Función a Trozos</h3>
         <button
           onClick={() => setEditorExpandido(!editorExpandido)}
-          className="text-xs font-semibold bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded transition shadow"
+          className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded transition shadow"
         >
           {editorExpandido ? 'Contraer Editor' : 'Expandir Editor'}
         </button>
@@ -72,13 +72,13 @@ export default function EditorFuncionTrozos({
       {editorExpandido ? (
         <div className="space-y-4">
           {tramos.map((tramo, indice) => (
-            <div key={tramo.id} className="bg-slate-900/50 p-4 rounded-lg border border-slate-600">
+            <div key={tramo.id} className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
               <div className="flex justify-between items-start mb-3">
-                <p className="text-sm font-semibold text-slate-300">Tramo {indice + 1}</p>
+                <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Tramo {indice + 1}</p>
                 {tramos.length > 1 && (
                   <button
                     onClick={() => eliminarTramo(tramo.id)}
-                    className="text-red-400 hover:text-red-300 text-xs font-semibold transition bg-red-400/10 px-2 py-1 rounded"
+                    className="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs font-semibold transition bg-red-400/10 px-2 py-1 rounded"
                   >
                     ✕ Eliminar
                   </button>
@@ -87,7 +87,7 @@ export default function EditorFuncionTrozos({
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-blue-300 mb-1 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1 uppercase tracking-wider">
                     Condición (Intervalo)
                   </label>
                   <input
@@ -96,15 +96,15 @@ export default function EditorFuncionTrozos({
                     onFocus={(evento) => evento.target.select()} // Permite seleccionar todo al hacer clic
                     onChange={(evento) => actualizarCondicion(tramo.id, evento.target.value)}
                     placeholder="Ej: 0 <= x <= 1"
-                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-600 rounded-lg text-white font-mono focus:outline-none focus:border-blue-500 transition text-sm shadow-inner"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500 transition text-sm shadow-inner"
                   />
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-slate-600 dark:text-slate-500 mt-1">
                     Operadores válidos: &lt; o &lt;=
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-blue-300 mb-1 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1 uppercase tracking-wider">
                     Expresión f(x)
                   </label>
                   <MathInput
@@ -118,16 +118,16 @@ export default function EditorFuncionTrozos({
 
           <button
             onClick={agregarTramo}
-            className="w-full py-3 border border-dashed border-blue-500 text-blue-400 hover:bg-blue-500/10 rounded-lg font-semibold transition text-sm"
+            className="w-full py-3 border border-dashed border-blue-500 text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 rounded-lg font-semibold transition text-sm"
           >
             + Agregar Tramo
           </button>
         </div>
       ) : (
-        <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-600 max-h-40 overflow-y-auto space-y-2">
+        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600 max-h-40 overflow-y-auto space-y-2">
           {tramos.map((tramo, indice) => (
-            <p key={tramo.id} className="text-sm text-slate-300 font-mono">
-              <span className="text-blue-400 font-bold">{indice + 1}.</span> f(x) = {tramo.expresion}, cuando {tramo.condicion}
+            <p key={tramo.id} className="text-sm text-slate-600 dark:text-slate-300 font-mono">
+              <span className="text-blue-700 dark:text-blue-400 font-bold">{indice + 1}.</span> f(x) = {tramo.expresion}, cuando {tramo.condicion}
             </p>
           ))}
         </div>

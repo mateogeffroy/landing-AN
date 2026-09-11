@@ -30,9 +30,9 @@ export default function VisualizadorCoeficientes({ a0, an, bn, armonicos }: Prop
   const formatearNumero = (numero: number) => parseFloat(numero.toFixed(6)).toString();
 
   return (
-    <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 shadow-lg">
+    <div className="bg-white dark:bg-slate-800/50 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-lg">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold text-white">Coeficientes de Fourier</h3>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Coeficientes de Fourier</h3>
         <button onClick={exportarACSV} className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md transition-colors text-xs font-semibold shadow-md">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -42,33 +42,33 @@ export default function VisualizadorCoeficientes({ a0, an, bn, armonicos }: Prop
       </div>
       
       <div className="mb-6">
-        <p className="text-blue-400 font-semibold mb-2">a₀ (Componente DC)</p>
-        <p className="text-slate-300 font-mono text-sm bg-slate-900/50 p-3 rounded flex items-center">
+        <p className="text-blue-700 dark:text-blue-400 font-semibold mb-2">a₀ (Componente DC)</p>
+        <p className="text-slate-800 dark:text-slate-300 font-mono text-sm bg-slate-50 dark:bg-slate-900/50 p-3 rounded flex items-center">
           <span className="w-8">a₀ =</span>
-          <span className="inline-block min-w-[80px] text-emerald-400">{formatearNumero(a0)}</span>
+          <span className="inline-block min-w-[80px] text-emerald-700 dark:text-emerald-400">{formatearNumero(a0)}</span>
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div>
-          <p className="text-blue-400 font-semibold mb-2">Coeficientes aₙ</p>
-          <div className="bg-slate-900/50 p-3 rounded max-h-48 overflow-y-auto">
+          <p className="text-blue-700 dark:text-blue-400 font-semibold mb-2">Coeficientes aₙ</p>
+          <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded max-h-48 overflow-y-auto">
             {Array.from({ length: Math.min(armonicos, an.length) }).map((_, i) => (
-              <p key={`an-${i}`} className="text-slate-300 font-mono text-xs mb-1 flex items-center">
+              <p key={`an-${i}`} className="text-slate-800 dark:text-slate-300 font-mono text-xs mb-1 flex items-center">
                 <span className="w-10">a<sub>{i + 1}</sub> =</span>
-                <span className="inline-block min-w-[80px] text-emerald-400">{formatearNumero(an[i] || 0)}</span>
+                <span className="inline-block min-w-[80px] text-emerald-700 dark:text-emerald-400">{formatearNumero(an[i] || 0)}</span>
               </p>
             ))}
           </div>
         </div>
 
         <div>
-          <p className="text-blue-400 font-semibold mb-2">Coeficientes bₙ</p>
-          <div className="bg-slate-900/50 p-3 rounded max-h-48 overflow-y-auto">
+          <p className="text-blue-700 dark:text-blue-400 font-semibold mb-2">Coeficientes bₙ</p>
+          <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded max-h-48 overflow-y-auto">
             {Array.from({ length: Math.min(armonicos, bn.length) }).map((_, i) => (
-              <p key={`bn-${i}`} className="text-slate-300 font-mono text-xs mb-1 flex items-center">
+              <p key={`bn-${i}`} className="text-slate-800 dark:text-slate-300 font-mono text-xs mb-1 flex items-center">
                 <span className="w-10">b<sub>{i + 1}</sub> =</span>
-                <span className="inline-block min-w-[80px] text-emerald-400">{formatearNumero(bn[i] || 0)}</span>
+                <span className="inline-block min-w-[80px] text-emerald-700 dark:text-emerald-400">{formatearNumero(bn[i] || 0)}</span>
               </p>
             ))}
           </div>
@@ -76,16 +76,16 @@ export default function VisualizadorCoeficientes({ a0, an, bn, armonicos }: Prop
       </div>
 
       {/* Seccion integrada de formulas de calculo de coeficientes */}
-      <div className="pt-6 border-t border-slate-700 space-y-4">
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4 text-center">Fórmulas de Cálculo de Coeficientes</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-slate-300">
-          <div className="bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-700/50 overflow-x-auto shadow-inner">
+      <div className="pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
+        <p className="text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4 text-center">Fórmulas de Cálculo de Coeficientes</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-slate-800 dark:text-slate-300">
+          <div className="bg-slate-50 dark:bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-200 dark:border-slate-700/50 overflow-x-auto shadow-inner">
             <KaTeX expresionTex={String.raw`a_0 = \frac{2}{T}\cdot\int_{T}f(t)\cdot dt`} enBloque={true} />
           </div>
-          <div className="bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-700/50 overflow-x-auto shadow-inner">
+          <div className="bg-slate-50 dark:bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-200 dark:border-slate-700/50 overflow-x-auto shadow-inner">
             <KaTeX expresionTex={String.raw`a_n = \frac{2}{T}\cdot\int_{T}f(t)\cdot \cos(n\omega t)\cdot dt`} enBloque={true} />
           </div>
-          <div className="bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-700/50 overflow-x-auto shadow-inner">
+          <div className="bg-slate-50 dark:bg-slate-900/80 py-4 px-2 rounded-xl text-center border border-slate-200 dark:border-slate-700/50 overflow-x-auto shadow-inner">
             <KaTeX expresionTex={String.raw`b_n = \frac{2}{T}\cdot\int_{T}f(t)\cdot \sin(n\omega t)\cdot dt`} enBloque={true} />
           </div>
         </div>

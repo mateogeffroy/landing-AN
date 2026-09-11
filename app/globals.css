@@ -17,6 +17,7 @@ input[type="number"] {
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-weight: 500;
 }
 
 /* Los controles interactivos (botones, inputs) usan la fuente de sistema:
@@ -30,6 +31,13 @@ textarea {
 }
 
 .gradient-text {
+  background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .gradient-text {
   background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -47,11 +55,18 @@ textarea {
 
 /* Textura de papel cuadriculado, muy sutil: guiño a las hojas de matemática. */
 .fondo-cuadriculado {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.dark .fondo-cuadriculado {
   background-color: #0f172a;
   background-image:
     linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
-  background-size: 34px 34px;
 }
 
 /* Hoja de estilos recomendada por Lenis para que el scroll por JS
