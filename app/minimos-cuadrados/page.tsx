@@ -45,12 +45,24 @@ const PATRON_CONCLUSION = [
   [true, true, true],
 ];
 
-const navegacion = [
-  { href: '#caso', label: '1. El caso', patron: PATRON_NUBE },
-  { href: '#teoria', label: '2. Teoría', patron: PATRON_TEORIA },
-  { href: '#analisis', label: '3. Análisis', patron: PATRON_ANALISIS },
-  { href: '#comparacion', label: '4. Comparación', patron: PATRON_COMPARACION },
-  { href: '#conclusion', label: '5. Conclusión', patron: PATRON_CONCLUSION },
+// La guía sigue el orden real del scroll: cada sección y, debajo, las consignas
+// que se resuelven dentro de ella. Las consignas van como sub-ítems para no
+// competir visualmente con los títulos de sección.
+type ItemGuia =
+  | { tipo: 'seccion'; href: string; label: string; patron: boolean[][] }
+  | { tipo: 'consigna'; href: string; label: string; numero: string };
+
+const navegacion: ItemGuia[] = [
+  { tipo: 'seccion', href: '#caso', label: '1. El caso', patron: PATRON_NUBE },
+  { tipo: 'consigna', href: '#consigna-1', numero: '1', label: 'Graficar clústeres' },
+  { tipo: 'seccion', href: '#teoria', label: '2. Teoría', patron: PATRON_TEORIA },
+  { tipo: 'seccion', href: '#analisis', label: '3. Análisis', patron: PATRON_ANALISIS },
+  { tipo: 'consigna', href: '#consigna-2', numero: '2', label: 'Elegir modelo' },
+  { tipo: 'consigna', href: '#consigna-3', numero: '3', label: 'Ajustar y obtener parámetros' },
+  { tipo: 'consigna', href: '#consigna-4', numero: '4', label: 'r² y residuos' },
+  { tipo: 'seccion', href: '#comparacion', label: '4. Comparación', patron: PATRON_COMPARACION },
+  { tipo: 'consigna', href: '#consigna-5', numero: '5', label: 'Comparar y concluir' },
+  { tipo: 'seccion', href: '#conclusion', label: '5. Conclusión', patron: PATRON_CONCLUSION },
 ];
 
 const MODELOS_TEORIA = [
@@ -86,16 +98,99 @@ const MODELOS_TEORIA = [
   },
 ];
 
+// Las tres formas de calcular ST y SR según el apunte de cátedra (página 8):
+// siempre sobre la variable que el sistema normal minimizó realmente.
+const CASOS_BONDAD = [
+  {
+    clave: 'directo' as const,
+    titulo: 'Caso directo',
+    modelos: 'Lineal · Polinómicos',
+    variable: 'y',
+    media: String.raw`\bar{y} = \frac{1}{n}\sum_{i=1}^{n} y_i`,
+    st: String.raw`ST = \sum_{i=1}^{n} \left( y_i - \bar{y} \right)^2`,
+    sr: String.raw`SR = \sum_{i=1}^{n} \left( y_i - y_{ajuste} \right)^2`,
+    nota: 'Estos modelos son lineales respecto de sus coeficientes, así que el error se minimizó sobre la propia variable medida.',
+  },
+  {
+    clave: 'logaritmico' as const,
+    titulo: 'Caso logarítmico',
+    modelos: 'Exponencial · Potencial',
+    variable: '\\ln(y)',
+    media: String.raw`\bar{y} = \frac{1}{n}\sum_{i=1}^{n} \ln(y_i)`,
+    st: String.raw`ST = \sum_{i=1}^{n} \left( \ln(y_i) - \bar{y} \right)^2`,
+    sr: String.raw`SR = \sum_{i=1}^{n} \left( \ln(y_i) - y_{ajuste} \right)^2`,
+    nota: 'Al linealizar con logaritmo, lo que se minimizó fueron las diferencias en ln(y). Calcular r² sobre y daría un número que no corresponde al ajuste que realmente se hizo.',
+  },
+  {
+    clave: 'inverso' as const,
+    titulo: 'Caso inverso',
+    modelos: 'Cociente',
+    variable: '1/y',
+    media: String.raw`\bar{y} = \frac{1}{n}\sum_{i=1}^{n} \frac{1}{y_i}`,
+    st: String.raw`ST = \sum_{i=1}^{n} \left( \frac{1}{y_i} - \bar{y} \right)^2`,
+    sr: String.raw`SR = \sum_{i=1}^{n} \left( \frac{1}{y_i} - y_{ajuste} \right)^2`,
+    nota: 'La linealización del cociente invierte ambos miembros, de modo que el ajuste se hizo sobre 1/y y ahí es donde se mide su calidad.',
+  },
+];
+
 const numeroLargo = (valor: number, decimales = 0) =>
   valor.toLocaleString('es-AR', { maximumFractionDigits: decimales, minimumFractionDigits: decimales });
+
+// Selector de clúster reutilizable. La grilla es de 2 o de 4 columnas, nunca de 3:
+// con cuatro especies, tres arriba y una suelta abajo queda desbalanceado.
+function SelectorClusteres({
+  seleccionado,
+  alSeleccionar,
+}: {
+  seleccionado: string;
+  alSeleccionar: (codigo: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+      {CLUSTERES.map((c) => {
+        const activo = c.codigo === seleccionado;
+        return (
+          <button
+            key={c.codigo}
+            onClick={() => alSeleccionar(c.codigo)}
+            aria-pressed={activo}
+            className={`px-3 py-2.5 rounded-lg border text-left transition-all ${
+              activo
+                ? 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 shadow-md'
+                : 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600'
+            }`}
+            style={activo ? { borderColor: c.color } : undefined}
+          >
+            <span
+              className={`block text-sm font-bold italic leading-tight ${
+                activo ? '' : 'text-slate-600 dark:text-slate-400'
+              }`}
+              style={activo ? { color: c.color } : undefined}
+            >
+              {c.nombre}
+            </span>
+            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-500 mt-0.5">
+              {c.temperatura} °C
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 const TIEMPO_EXTRAPOLACION = 600; // el doble del intervalo observado
 
 export default function PaginaMinimosCuadrados() {
+  // La sección 1 y la sección 3 tienen cada una su propio clúster seleccionado:
+  // se navegan en momentos distintos de la exposición y no deben arrastrarse entre sí.
+  const [codigoClusterDatos, setCodigoClusterDatos] = useState(CLUSTERES[0].codigo);
   const [codigoCluster, setCodigoCluster] = useState(CLUSTERES[0].codigo);
   const [modeloVisible, setModeloVisible] = useState<ClaveModelo>('exponencial');
   const [verTablaCompleta, setVerTablaCompleta] = useState(false);
+  const [casoBondad, setCasoBondad] = useState<'directo' | 'logaritmico' | 'inverso'>('directo');
 
+  const clusterDatos = CLUSTERES.find((c) => c.codigo === codigoClusterDatos) ?? CLUSTERES[0];
   const cluster = CLUSTERES.find((c) => c.codigo === codigoCluster) ?? CLUSTERES[0];
 
   // Todos los modelos candidatos, para cada clúster: se calculan una sola vez.
@@ -154,8 +249,8 @@ export default function PaginaMinimosCuadrados() {
   const datosResiduosLineal = cluster.x.map((x, i) => ({ x, residuo: ajusteLineal.residuos[i] }));
 
   const filasVisibles = verTablaCompleta
-    ? cluster.x.map((x, i) => ({ x, y: cluster.y[i] }))
-    : [...cluster.x.slice(0, 6).map((x, i) => ({ x, y: cluster.y[i] })), { x: 300, y: cluster.y[60] }];
+    ? clusterDatos.x.map((x, i) => ({ x, y: clusterDatos.y[i] }))
+    : [...clusterDatos.x.slice(0, 6).map((x, i) => ({ x, y: clusterDatos.y[i] })), { x: 300, y: clusterDatos.y[60] }];
 
   return (
     <main className="min-h-screen flex flex-col fondo-cuadriculado">
@@ -180,18 +275,33 @@ export default function PaginaMinimosCuadrados() {
         <div className="grid grid-cols-1 lg:grid-cols-[9rem_1fr] gap-4 lg:gap-10">
 
           {/* GUÍA LATERAL (sólo desktop) */}
-          <nav className="hidden lg:flex flex-col gap-8 sticky top-32 self-start h-fit pr-2 border-r border-slate-200 dark:border-slate-800">
-            {navegacion.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={(evento) => desplazarHaciaAncla(evento, item.href)}
-                className="group flex items-center gap-3 text-slate-600 dark:text-slate-500 hover:text-blue-600 dark:hover:text-slate-200 transition-colors"
-              >
-                <GlifoMatriz celdas={item.patron} className="text-slate-400 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors shrink-0" />
-                <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{item.label}</span>
-              </a>
-            ))}
+          <nav className="hidden lg:flex flex-col gap-3 sticky top-32 self-start h-fit pr-2 border-r border-slate-200 dark:border-slate-800">
+            {navegacion.map((item) =>
+              item.tipo === 'seccion' ? (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={(evento) => desplazarHaciaAncla(evento, item.href)}
+                  className="group flex items-center gap-3 mt-4 first:mt-0 text-slate-600 dark:text-slate-500 hover:text-blue-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <GlifoMatriz celdas={item.patron} className="text-slate-400 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors shrink-0" />
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{item.label}</span>
+                </a>
+              ) : (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={(evento) => desplazarHaciaAncla(evento, item.href)}
+                  title={`Consigna ${item.numero}: ${item.label}`}
+                  className="group flex items-center gap-2 pl-2 ml-[0.6rem] border-l border-slate-200 dark:border-slate-700/70 text-slate-500 dark:text-slate-600 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                >
+                  <span className="shrink-0 w-4 h-4 flex items-center justify-center rounded-[4px] border border-current text-[9px] font-black leading-none">
+                    {item.numero}
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider leading-tight">{item.label}</span>
+                </a>
+              )
+            )}
           </nav>
 
           <div className="space-y-8 min-w-0">
@@ -264,17 +374,25 @@ export default function PaginaMinimosCuadrados() {
                   </div>
                 </div>
 
+                {/* SELECTOR PROPIO DE LA SECCIÓN: controla la tabla y el gráfico de abajo */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">
+                    Elegí un clúster para ver sus mediciones y su nube de puntos
+                  </p>
+                  <SelectorClusteres seleccionado={codigoClusterDatos} alSeleccionar={setCodigoClusterDatos} />
+                </div>
+
                 {/* TABLA DE MEDICIONES */}
                 <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5 md:p-6">
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">
-                      Mediciones · <span className="italic text-slate-500 dark:text-slate-400">{cluster.nombre}</span>
+                      Mediciones · <span className="italic text-slate-500 dark:text-slate-400">{clusterDatos.nombre}</span>
                     </p>
                     <button
                       onClick={() => setVerTablaCompleta((valor) => !valor)}
                       className="text-[11px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
                     >
-                      {verTablaCompleta ? 'Ver resumen' : `Ver las ${cluster.x.length} filas`}
+                      {verTablaCompleta ? 'Ver resumen' : `Ver las ${clusterDatos.x.length} filas`}
                     </button>
                   </div>
                   <div className={`overflow-x-auto ${verTablaCompleta ? 'max-h-80 overflow-y-auto' : ''}`}>
@@ -297,36 +415,36 @@ export default function PaginaMinimosCuadrados() {
                   </div>
                   {!verTablaCompleta && (
                     <p className="text-xs text-slate-600 dark:text-slate-500 mt-3">
-                      Se muestran los primeros registros y el último; el conjunto completo tiene {cluster.x.length} pares (t, C).
+                      Se muestran los primeros registros y el último; el conjunto completo tiene {clusterDatos.x.length} pares (t, C).
                     </p>
                   )}
                 </div>
 
-                {/* NUBE DE PUNTOS DE CADA CLÚSTER */}
-                <div>
+                {/* NUBE DE PUNTOS DEL CLÚSTER SELECCIONADO */}
+                <div id="consigna-1" className="scroll-mt-28">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-4">
                     Consigna 1 · Cada clúster graficado por separado
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {CLUSTERES.map((c) => (
-                      <div key={c.codigo} className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
-                        <p className="text-sm font-bold mb-1 italic" style={{ color: c.color }}>{c.nombre}</p>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">{c.temperatura} °C</p>
-                        <GraficoAjuste
-                          datos={c.x.map((x, i) => ({ x, observado: c.y[i], ajustado: null }))}
-                          etiquetaX="t (min)"
-                          etiquetaY="C (UFC/mL)"
-                          colorPuntos={c.color}
-                          altura={220}
-                        />
-                      </div>
-                    ))}
+                  <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4 md:p-5">
+                    <p className="text-base font-bold mb-1 italic" style={{ color: clusterDatos.color }}>
+                      {clusterDatos.nombre}
+                    </p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-4">
+                      {clusterDatos.temperatura} °C · {clusterDatos.x.length} mediciones
+                    </p>
+                    <GraficoAjuste
+                      datos={clusterDatos.x.map((x, i) => ({ x, observado: clusterDatos.y[i], ajustado: null }))}
+                      etiquetaX="t (min)"
+                      etiquetaY="C (UFC/mL)"
+                      colorPuntos={clusterDatos.color}
+                      altura={340}
+                    />
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-4">
-                    Las cuatro nubes muestran la misma forma cualitativa: un crecimiento lento al principio que se acelera de manera
-                    sostenida, sin llegar a estabilizarse dentro de los 300 minutos observados. Esa curvatura creciente descarta de
-                    entrada un comportamiento lineal, pero todavía no alcanza para elegir el modelo: esa decisión se toma en la
-                    sección 3, comparando los candidatos con r² y residuos.
+                    Recorriendo las cuatro especies con el selector se ve que todas comparten la misma forma cualitativa: un
+                    crecimiento lento al principio que se acelera de manera sostenida, sin llegar a estabilizarse dentro de los 300
+                    minutos observados. Esa curvatura creciente descarta de entrada un comportamiento lineal, pero todavía no alcanza
+                    para elegir el modelo: esa decisión se toma en la sección 3, comparando los candidatos con r² y residuos.
                   </p>
                 </div>
               </div>
@@ -427,19 +545,72 @@ export default function PaginaMinimosCuadrados() {
                     La bondad del ajuste mide si el ajuste realizado fue realmente efectivo, y no depende de la forma aparente de los
                     datos: se puede ajustar una recta a cualquier nube y sólo el cálculo revela si esa elección fue buena.
                   </p>
-                  <div className="bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner p-4 desplazamiento-formula text-center mb-4">
-                    <KaTeX
-                      expresionTex={String.raw`r^2 = \frac{ST - SR}{ST} \qquad ST = \sum_{i=1}^{n}(y_i - \bar{y})^2 \qquad SR = \sum_{i=1}^{n}(y_i - y_{ajuste})^2`}
-                      enBloque={true}
-                    />
+                  <div className="bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner p-4 desplazamiento-formula text-center mb-5">
+                    <KaTeX expresionTex={String.raw`r^2 = \frac{ST - SR}{ST}`} enBloque={true} />
                   </div>
-                  <p className="text-slate-800 dark:text-slate-300 leading-relaxed">
-                    Su valor está siempre entre 0 y 1, y se considera un buen ajuste cuando <KaTeX expresionTex="r^2 > 0{,}85" />. El
-                    apunte indica calcular <KaTeX expresionTex="ST" /> y <KaTeX expresionTex="SR" /> sobre{' '}
-                    <strong className="text-emerald-700 dark:text-emerald-300">la variable efectivamente minimizada</strong>: <KaTeX expresionTex="y" /> en los
-                    casos lineal y polinómico, <KaTeX expresionTex="\ln(y)" /> en el exponencial y el potencial, y{' '}
-                    <KaTeX expresionTex="1/y" /> en el del cociente. Ese es el criterio que se usa de forma consistente en todo el
-                    trabajo, para comparar modelos de distinta naturaleza sobre una base equivalente.
+
+                  <p className="text-slate-800 dark:text-slate-300 leading-relaxed mb-4">
+                    Ahora bien, <KaTeX expresionTex="ST" /> y <KaTeX expresionTex="SR" /> no se calculan siempre sobre{' '}
+                    <KaTeX expresionTex="y" />: el apunte los define sobre{' '}
+                    <strong className="text-emerald-700 dark:text-emerald-300">la variable que efectivamente se minimizó</strong> al
+                    resolver el sistema normal. Por eso hay tres versiones, una por cada familia de modelos:
+                  </p>
+
+                  {/* SELECTOR DE LOS TRES CASOS DEL APUNTE */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+                    {CASOS_BONDAD.map((caso) => {
+                      const activo = caso.clave === casoBondad;
+                      return (
+                        <button
+                          key={caso.clave}
+                          onClick={() => setCasoBondad(caso.clave)}
+                          aria-pressed={activo}
+                          className={`px-3 py-2.5 rounded-lg border text-left transition-all ${
+                            activo
+                              ? 'bg-white dark:bg-slate-900 border-emerald-500 shadow-md'
+                              : 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600'
+                          }`}
+                        >
+                          <span
+                            className={`block text-sm font-bold leading-tight ${
+                              activo ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-400'
+                            }`}
+                          >
+                            {caso.titulo}
+                          </span>
+                          <span className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-500 mt-0.5">
+                            {caso.modelos}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {CASOS_BONDAD.filter((caso) => caso.clave === casoBondad).map((caso) => (
+                    <div key={caso.clave} className="bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner p-4 md:p-5 space-y-3">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+                        Se minimiza sobre <KaTeX expresionTex={caso.variable} />
+                      </p>
+                      <div className="desplazamiento-formula text-center">
+                        <KaTeX expresionTex={caso.media} enBloque={true} />
+                      </div>
+                      <div className="desplazamiento-formula text-center">
+                        <KaTeX expresionTex={caso.st} enBloque={true} />
+                      </div>
+                      <div className="desplazamiento-formula text-center">
+                        <KaTeX expresionTex={caso.sr} enBloque={true} />
+                      </div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-200 dark:border-slate-700/50 pt-3">
+                        {caso.nota}
+                      </p>
+                    </div>
+                  ))}
+
+                  <p className="text-slate-800 dark:text-slate-300 leading-relaxed mt-4">
+                    El valor está siempre entre 0 y 1, y se considera un buen ajuste cuando{' '}
+                    <KaTeX expresionTex="r^2 > 0{,}85" />. Usar en cada modelo la variable que corresponde es lo que permite
+                    comparar entre sí modelos de distinta naturaleza sobre una base equivalente; es el criterio que se respeta en
+                    toda la página.
                   </p>
                 </div>
               </div>
@@ -480,7 +651,7 @@ export default function PaginaMinimosCuadrados() {
                 </div>
 
                 {/* COMPARACIÓN DE MODELOS CANDIDATOS */}
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5 md:p-6">
+                <div id="consigna-2" className="scroll-mt-28 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5 md:p-6">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-4">
                     Consigna 2 · Comparación de los modelos candidatos
                   </p>
@@ -540,7 +711,7 @@ export default function PaginaMinimosCuadrados() {
                 </div>
 
                 {/* SELECTOR DE MODELO Y PROCEDIMIENTO */}
-                <div className="space-y-4">
+                <div id="consigna-3" className="scroll-mt-28 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">
                       Consigna 3 · Procedimiento de cálculo por mínimos cuadrados
@@ -641,7 +812,7 @@ export default function PaginaMinimosCuadrados() {
 
                 {/* BONDAD Y GRÁFICOS */}
                 {ajusteActual?.valido && (
-                  <div className="space-y-4">
+                  <div id="consigna-4" className="scroll-mt-28 space-y-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">
                       Consigna 4 · Bondad del ajuste y análisis de residuos
                     </p>
@@ -748,12 +919,52 @@ export default function PaginaMinimosCuadrados() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400 mb-3">
                           Interpretación de los parámetros
                         </p>
-                        <p className="text-slate-800 dark:text-slate-300 leading-relaxed">
-                          El parámetro <KaTeX expresionTex={`a = ${formatearNumero(ajusteActual.parametros[0].valor, 2)}`} /> es la
-                          concentración estimada en el instante inicial (<KaTeX expresionTex="t = 0" />), y{' '}
+                        <p className="text-slate-800 dark:text-slate-300 leading-relaxed mb-4">
+                          Los dos parámetros que devolvió el sistema no son números sueltos: cada uno significa algo concreto del
+                          cultivo. <KaTeX expresionTex={`a = ${formatearNumero(ajusteActual.parametros[0].valor, 2)}`} /> es la
+                          concentración estimada en el instante inicial, porque al reemplazar{' '}
+                          <KaTeX expresionTex="t = 0" /> queda <KaTeX expresionTex="C(0) = a \cdot e^{0} = a" />. Y{' '}
                           <KaTeX expresionTex={`b = ${formatearNumero(ajusteActual.parametros[1].valor, 6)} \\; \\text{min}^{-1}`} /> es
-                          la tasa de crecimiento específica del cultivo. A partir de <KaTeX expresionTex="b" /> se obtiene el tiempo de
-                          duplicación:
+                          la tasa de crecimiento específica: cuanto más grande, más rápido crece el cultivo.
+                        </p>
+
+                        <p className="text-slate-800 dark:text-slate-300 leading-relaxed mb-3">
+                          Para que <KaTeX expresionTex="b" /> se pueda comparar entre especies conviene traducirlo a una magnitud con
+                          sentido biológico: el <strong className="text-blue-700 dark:text-blue-300">tiempo de duplicación</strong>,
+                          es decir cuánto tarda el cultivo en llegar al doble de su concentración. Se deduce planteando exactamente
+                          eso y despejando:
+                        </p>
+
+                        <ol className="space-y-2 mb-4">
+                          {[
+                            { tex: String.raw`C(t + t_{1/2}) = 2 \cdot C(t)`, nota: 'Planteamos que pasó el doble.' },
+                            { tex: String.raw`a \, e^{b(t + t_{1/2})} = 2 \, a \, e^{b t}`, nota: 'Reemplazamos por el modelo.' },
+                            { tex: String.raw`e^{b t} \cdot e^{b \, t_{1/2}} = 2 \, e^{b t}`, nota: 'Separamos el exponente; a se cancela.' },
+                            { tex: String.raw`e^{b \, t_{1/2}} = 2`, nota: 'Dividimos por e^{bt}: el instante t no importa.' },
+                            { tex: String.raw`b \cdot t_{1/2} = \ln(2)`, nota: 'Aplicamos ln a ambos miembros.' },
+                            { tex: String.raw`t_{1/2} = \frac{\ln(2)}{b}`, nota: 'Despejamos el tiempo de duplicación.' },
+                          ].map((paso, indice) => (
+                            <li
+                              key={indice}
+                              className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-700/50 rounded-lg px-4 py-2.5 flex flex-col md:flex-row md:items-center gap-2 md:gap-5"
+                            >
+                              <span className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black">
+                                {indice + 1}
+                              </span>
+                              <div className="desplazamiento-formula flex-1 min-w-0">
+                                <KaTeX expresionTex={paso.tex} />
+                              </div>
+                              <span className="text-xs text-slate-500 dark:text-slate-400 md:text-right md:max-w-[14rem] shrink-0 leading-snug">
+                                {paso.nota}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+
+                        <p className="text-slate-800 dark:text-slate-300 leading-relaxed mb-3">
+                          Notar que el resultado no depende de <KaTeX expresionTex="t" />: en un crecimiento exponencial el tiempo de
+                          duplicación es siempre el mismo, y por eso sirve para comparar especies. Con el <KaTeX expresionTex="b" /> de
+                          este clúster:
                         </p>
                         <div className="bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner p-4 desplazamiento-formula text-center my-4">
                           <KaTeX
@@ -767,7 +978,8 @@ export default function PaginaMinimosCuadrados() {
                         <p className="text-slate-800 dark:text-slate-300 leading-relaxed">
                           Bajo las condiciones controladas del ensayo, la población de <span className="italic">{cluster.nombre}</span>{' '}
                           duplica su concentración, en promedio, cada{' '}
-                          {tiempoDeDuplicacion(ajusteActual.parametros[1].valor).toFixed(1)} minutos durante la fase observada.
+                          {tiempoDeDuplicacion(ajusteActual.parametros[1].valor).toFixed(1)} minutos durante la fase observada. Este
+                          paso es el puente hacia la consigna 5: es lo que después permite comparar las cuatro especies entre sí.
                         </p>
                       </div>
                     )}
@@ -782,10 +994,15 @@ export default function PaginaMinimosCuadrados() {
                 <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-wide border-l-4 border-amber-500 pl-4">
                   4. Comparación entre clústeres
                 </h2>
-                <p className="text-slate-800 dark:text-slate-300 leading-relaxed">
-                  Consigna 5 · Los cuatro cultivos quedan descriptos por el mismo tipo de modelo, pero con parámetros —y por lo tanto
-                  comportamientos— muy distintos entre sí.
-                </p>
+                <div id="consigna-5" className="scroll-mt-28">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-4">
+                    Consigna 5 · Comparación entre clústeres y conclusión
+                  </p>
+                  <p className="text-slate-800 dark:text-slate-300 leading-relaxed">
+                    Los cuatro cultivos quedan descriptos por el mismo tipo de modelo, pero con parámetros —y por lo tanto
+                    comportamientos— muy distintos entre sí.
+                  </p>
+                </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse">
