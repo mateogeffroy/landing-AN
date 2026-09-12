@@ -6,7 +6,13 @@ import Footer from '@/src/components/Footer';
 import KaTeX from '@/src/components/KaTeX';
 import RevelarAlEntrar from '@/src/components/RevelarAlEntrar';
 import GlifoMatriz from '@/src/components/GlifoMatriz';
-import { GraficoAjuste, GraficoResiduos, GraficoComparacion } from '@/src/components/GraficosAjuste';
+import {
+  GraficoAjuste,
+  GraficoResiduos,
+  GraficoComparacion,
+  GraficoBarrasAgrupadas,
+  GraficoBarrasSimples,
+} from '@/src/components/GraficosAjuste';
 import { desplazarHaciaAncla } from '@/src/lib/lenis';
 import { CLUSTERES } from '@/src/lib/datosCaso2';
 import {
@@ -133,6 +139,22 @@ const CASOS_BONDAD = [
   },
 ];
 
+// Colores por modelo para el gráfico de barras comparativo. Se mantienen fijos
+// para que cada modelo se identifique igual en todos los clústeres.
+const SERIES_MODELOS: { clave: ClaveModelo; nombre: string; color: string }[] = [
+  { clave: 'lineal', nombre: 'Lineal', color: '#3b82f6' },
+  { clave: 'exponencial', nombre: 'Exponencial', color: '#f59e0b' },
+  { clave: 'potencial', nombre: 'Potencial', color: '#10b981' },
+  { clave: 'polinomico2', nombre: 'Polinómico (2º)', color: '#ef4444' },
+  { clave: 'cociente', nombre: 'Cociente', color: '#a855f7' },
+];
+
+// "Escherichia coli" -> "E. coli": los ticks del eje X no tienen lugar para el nombre completo.
+const nombreCorto = (nombre: string) => {
+  const [genero, ...resto] = nombre.split(' ');
+  return resto.length ? `${genero[0]}. ${resto.join(' ')}` : nombre;
+};
+
 const numeroLargo = (valor: number, decimales = 0) =>
   valor.toLocaleString('es-AR', { maximumFractionDigits: decimales, minimumFractionDigits: decimales });
 
@@ -225,6 +247,19 @@ export default function PaginaMinimosCuadrados() {
     [ajustes]
   );
   const ajusteLineal = useMemo(() => ajustarLineal({ x: cluster.x, y: cluster.y }), [cluster]);
+
+  // Una fila por clúster con el r² de cada modelo, para el gráfico de barras agrupadas.
+  const datosBarrasBondad = useMemo(
+    () =>
+      CLUSTERES.map((c) => {
+        const fila: Record<string, string | number> = { cluster: nombreCorto(c.nombre) };
+        (ajustesPorCluster.get(c.codigo) ?? []).forEach((ajuste) => {
+          if (ajuste.valido) fila[ajuste.clave] = Number(ajuste.r2.toFixed(4));
+        });
+        return fila;
+      }),
+    [ajustesPorCluster]
+  );
 
   // Series para los gráficos del clúster seleccionado.
   const datosAjuste = cluster.x.map((x, i) => ({
@@ -437,9 +472,33 @@ export default function PaginaMinimosCuadrados() {
                       etiquetaX="t (min)"
                       etiquetaY="C (UFC/mL)"
                       colorPuntos={clusterDatos.color}
-                      altura={340}
+                      altura={380}
+                      conZoom
                     />
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-2">
+                      Arrastrá los extremos de la barra inferior para acercarte a un tramo del ensayo. El eje vertical se reescala
+                      solo al rango que quede visible.
+                    </p>
                   </div>
+
+                  <div className="bg-amber-50 dark:bg-amber-500/5 border-l-4 border-amber-500 rounded-r-xl p-5 mt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-2">
+                      Probá acercarte a los primeros 100 minutos
+                    </p>
+                    <p className="text-sm text-slate-800 dark:text-slate-300 leading-relaxed">
+                      Visto completo, el gráfico parece una exponencial impecable. Pero eso es en parte un efecto de la escala: los
+                      valores finales son tan grandes que aplastan todo el tramo inicial contra el eje. Al hacer zoom sobre los
+                      primeros minutos, el eje vertical se reescala y aparece lo que estaba tapado: los puntos{' '}
+                      <strong className="text-slate-900 dark:text-slate-100">no caen exactamente sobre una curva suave</strong>, sino
+                      que oscilan alrededor de ella. Son datos experimentales, con su dispersión.
+                    </p>
+                    <p className="text-sm text-slate-800 dark:text-slate-300 leading-relaxed mt-3">
+                      Esto es justamente por qué no alcanza con mirar la forma de la nube para elegir el modelo, y por qué después
+                      hacen falta r² y el análisis de residuos: la vista general engaña en los dos sentidos, puede hacer parecer
+                      perfecto un ajuste mediocre y puede esconder la estructura fina de los datos.
+                    </p>
+                  </div>
+
                   <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-4">
                     Recorriendo las cuatro especies con el selector se ve que todas comparten la misma forma cualitativa: un
                     crecimiento lento al principio que se acelera de manera sostenida, sin llegar a estabilizarse dentro de los 300
@@ -1054,9 +1113,50 @@ export default function PaginaMinimosCuadrados() {
                   </p>
                 </div>
 
+                {/* BONDAD DE AJUSTE EN BARRAS */}
+                <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4 md:p-5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">
+                    Bondad de ajuste (r²) por modelo y clúster
+                  </p>
+                  <GraficoBarrasAgrupadas
+                    datos={datosBarrasBondad}
+                    claveGrupo="cluster"
+                    series={SERIES_MODELOS}
+                    etiquetaY="r²"
+                    umbral={{ valor: 0.85, etiqueta: 'Umbral 0,85' }}
+                  />
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-4">
+                    En los cuatro clústeres el modelo exponencial es el que mejor ajusta, y la diferencia con el lineal y el
+                    potencial se ve de un vistazo. El polinómico de 2º grado es el que más se le acerca —y cuanto más lento crece la
+                    especie, más se le acerca—, pero no describe una tasa de crecimiento proporcional a la población: entre los dos,
+                    el exponencial es el único que además tiene respaldo en la cinética conocida del crecimiento bacteriano.
+                  </p>
+                </div>
+
+                {/* TIEMPO DE DUPLICACIÓN EN BARRAS */}
+                <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4 md:p-5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">
+                    Velocidad de crecimiento por especie (tiempo de duplicación)
+                  </p>
+                  <GraficoBarrasSimples
+                    datos={exponencialesPorCluster.map((fila) => ({
+                      nombre: nombreCorto(fila.cluster.nombre),
+                      valor: fila.duplicacion,
+                      color: fila.cluster.color,
+                    }))}
+                    etiquetaY="Tiempo de duplicación (min)"
+                    sufijo=" min"
+                  />
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-4">
+                    Traducido a tiempo de duplicación, el parámetro b se vuelve comparable: de los 27 minutos de{' '}
+                    <span className="italic">E. coli</span> a los 66 de <span className="italic">P. fluorescens</span> hay un factor
+                    de casi 2,5 en velocidad de crecimiento.
+                  </p>
+                </div>
+
                 <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5 md:p-6">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-4">
-                    Bondad de cada modelo candidato, por clúster
+                    Los mismos valores de r², en tabla
                   </p>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse">

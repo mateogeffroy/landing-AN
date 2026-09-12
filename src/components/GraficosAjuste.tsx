@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 import {
   ComposedChart,
+  BarChart,
+  Bar,
+  Cell,
+  LabelList,
+  Brush,
   Line,
   Scatter,
   XAxis,
@@ -67,6 +72,8 @@ interface PropiedadesGraficoAjuste {
   nombreCurva?: string;
   escalaLogaritmica?: boolean;
   altura?: number;
+  // Agrega la barra inferior para acercarse a un tramo del eje X.
+  conZoom?: boolean;
 }
 
 // Nube de puntos experimental con la curva de ajuste superpuesta.
@@ -79,12 +86,13 @@ export function GraficoAjuste({
   nombreCurva = 'Modelo ajustado',
   escalaLogaritmica = false,
   altura = 320,
+  conZoom = false,
 }: PropiedadesGraficoAjuste) {
   const paleta = usarPaleta();
 
   return (
     <ResponsiveContainer width="100%" height={altura}>
-      <ComposedChart data={datos} margin={{ top: 10, right: 16, left: 4, bottom: 22 }}>
+      <ComposedChart data={datos} margin={{ top: 10, right: 16, left: 4, bottom: conZoom ? 52 : 22 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={paleta.grilla} />
         <XAxis
           dataKey="x"
@@ -92,7 +100,7 @@ export function GraficoAjuste({
           domain={['dataMin', 'dataMax']}
           tick={paleta.marca}
           tickFormatter={formatearEje}
-          label={{ value: etiquetaX, position: 'insideBottom', offset: -12, fill: paleta.etiqueta, fontSize: 11 }}
+          label={{ value: etiquetaX, position: 'insideBottom', offset: conZoom ? -42 : -12, fill: paleta.etiqueta, fontSize: 11 }}
           {...paleta.eje}
         />
         <YAxis
@@ -118,6 +126,16 @@ export function GraficoAjuste({
           isAnimationActive={false}
           connectNulls
         />
+        {conZoom && (
+          <Brush
+            dataKey="x"
+            height={26}
+            travellerWidth={10}
+            stroke={paleta.eje.stroke}
+            fill="transparent"
+            tickFormatter={(valor) => formatearEje(Number(valor))}
+          />
+        )}
       </ComposedChart>
     </ResponsiveContainer>
   );
@@ -215,6 +233,108 @@ export function GraficoComparacion({ series, etiquetaX, etiquetaY, altura = 380 
           <Scatter key={serie.nombre} dataKey={serie.nombre} name={serie.nombre} fill={serie.color} isAnimationActive={false} />
         ))}
       </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
+interface PropiedadesBarrasAgrupadas {
+  // Una fila por grupo del eje X (cada clúster), con un valor por serie (cada modelo).
+  datos: Record<string, string | number>[];
+  claveGrupo: string;
+  series: { clave: string; nombre: string; color: string }[];
+  etiquetaY: string;
+  umbral?: { valor: number; etiqueta: string };
+  altura?: number;
+}
+
+// Barras agrupadas para comparar la bondad de ajuste de cada modelo en cada clúster.
+// La línea de umbral permite ver de un vistazo qué modelos superan el 0,85 de referencia.
+export function GraficoBarrasAgrupadas({
+  datos,
+  claveGrupo,
+  series,
+  etiquetaY,
+  umbral,
+  altura = 380,
+}: PropiedadesBarrasAgrupadas) {
+  const paleta = usarPaleta();
+
+  return (
+    <ResponsiveContainer width="100%" height={altura}>
+      <BarChart data={datos} margin={{ top: 10, right: 16, left: 4, bottom: 26 }} barGap={2} barCategoryGap="18%">
+        <CartesianGrid strokeDasharray="3 3" stroke={paleta.grilla} vertical={false} />
+        <XAxis dataKey={claveGrupo} tick={paleta.marca} interval={0} {...paleta.eje} />
+        <YAxis
+          tick={paleta.marca}
+          width={52}
+          domain={[0, 1]}
+          tickFormatter={(valor) => Number(valor).toFixed(1)}
+          label={{ value: etiquetaY, angle: -90, position: 'insideLeft', fill: paleta.etiqueta, fontSize: 11 }}
+          {...paleta.eje}
+        />
+        <Tooltip
+          contentStyle={paleta.tooltip}
+          formatter={(valor) => Number(valor).toFixed(4)}
+          cursor={{ fill: paleta.grilla, opacity: 0.35 }}
+        />
+        <Legend wrapperStyle={{ paddingTop: 16, fontSize: 12 }} />
+        {umbral && (
+          <ReferenceLine
+            y={umbral.valor}
+            stroke="#ef4444"
+            strokeDasharray="6 4"
+            strokeWidth={2}
+            label={{ value: umbral.etiqueta, position: 'right', fill: '#ef4444', fontSize: 10 }}
+          />
+        )}
+        {series.map((serie) => (
+          <Bar key={serie.clave} dataKey={serie.clave} name={serie.nombre} fill={serie.color} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+interface PropiedadesBarrasSimples {
+  datos: { nombre: string; valor: number; color: string }[];
+  etiquetaY: string;
+  sufijo?: string;
+  altura?: number;
+}
+
+// Barras simples con el valor escrito encima: una barra por especie.
+export function GraficoBarrasSimples({ datos, etiquetaY, sufijo = '', altura = 320 }: PropiedadesBarrasSimples) {
+  const paleta = usarPaleta();
+
+  return (
+    <ResponsiveContainer width="100%" height={altura}>
+      <BarChart data={datos} margin={{ top: 24, right: 16, left: 4, bottom: 26 }} barCategoryGap="28%">
+        <CartesianGrid strokeDasharray="3 3" stroke={paleta.grilla} vertical={false} />
+        <XAxis dataKey="nombre" tick={paleta.marca} interval={0} {...paleta.eje} />
+        <YAxis
+          tick={paleta.marca}
+          width={56}
+          tickFormatter={(valor) => formatearEje(Number(valor))}
+          label={{ value: etiquetaY, angle: -90, position: 'insideLeft', fill: paleta.etiqueta, fontSize: 11 }}
+          {...paleta.eje}
+        />
+        <Tooltip
+          contentStyle={paleta.tooltip}
+          formatter={(valor) => `${Number(valor).toFixed(1)}${sufijo}`}
+          cursor={{ fill: paleta.grilla, opacity: 0.35 }}
+        />
+        <Bar dataKey="valor" name={etiquetaY} radius={[4, 4, 0, 0]} isAnimationActive={false}>
+          {datos.map((fila) => (
+            <Cell key={fila.nombre} fill={fila.color} />
+          ))}
+          <LabelList
+            dataKey="valor"
+            position="top"
+            formatter={(valor) => Number(valor).toFixed(1)}
+            style={{ fill: paleta.marca.fill, fontSize: 11, fontWeight: 700 }}
+          />
+        </Bar>
+      </BarChart>
     </ResponsiveContainer>
   );
 }
