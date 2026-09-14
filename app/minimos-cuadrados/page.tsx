@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import Header from '@/src/components/Header';
 import Footer from '@/src/components/Footer';
 import KaTeX from '@/src/components/KaTeX';
@@ -63,8 +64,8 @@ const navegacion: ItemGuia[] = [
   { tipo: 'consigna', href: '#consigna-1', numero: '1', label: 'Graficar clústeres' },
   { tipo: 'seccion', href: '#teoria', label: '2. Teoría', patron: PATRON_TEORIA },
   { tipo: 'seccion', href: '#analisis', label: '3. Análisis', patron: PATRON_ANALISIS },
-  { tipo: 'consigna', href: '#consigna-2', numero: '2', label: 'Elegir modelo' },
-  { tipo: 'consigna', href: '#consigna-3', numero: '3', label: 'Ajustar y obtener parámetros' },
+  { tipo: 'consigna', href: '#consigna-2', numero: '2', label: 'Ajustar y obtener parámetros' },
+  { tipo: 'consigna', href: '#consigna-3', numero: '3', label: 'Elegir modelo' },
   { tipo: 'consigna', href: '#consigna-4', numero: '4', label: 'r² y residuos' },
   { tipo: 'seccion', href: '#comparacion', label: '4. Comparación', patron: PATRON_COMPARACION },
   { tipo: 'consigna', href: '#consigna-5', numero: '5', label: 'Comparar y concluir' },
@@ -155,11 +156,14 @@ const nombreCorto = (nombre: string) => {
   return resto.length ? `${genero[0]}. ${resto.join(' ')}` : nombre;
 };
 
+// Sin `minimumFractionDigits`: los decimales son un techo, no un relleno, así que
+// un valor entero se muestra como 61 y no como 61,0000.
 const numeroLargo = (valor: number, decimales = 0) =>
-  valor.toLocaleString('es-AR', { maximumFractionDigits: decimales, minimumFractionDigits: decimales });
+  valor.toLocaleString('es-AR', { maximumFractionDigits: decimales });
 
 // Selector de clúster reutilizable. La grilla es de 2 o de 4 columnas, nunca de 3:
-// con cuatro especies, tres arriba y una suelta abajo queda desbalanceado.
+// con cuatro especies, tres arriba y una suelta abajo queda desbalanceado. En
+// escritorio entran las cuatro en una sola fila a cualquier ancho; en mobile, 2×2.
 function SelectorClusteres({
   seleccionado,
   alSeleccionar,
@@ -168,7 +172,7 @@ function SelectorClusteres({
   alSeleccionar: (codigo: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
       {CLUSTERES.map((c) => {
         const activo = c.codigo === seleccionado;
         return (
@@ -276,9 +280,21 @@ export default function PaginaMinimosCuadrados() {
     return { x, observado: lny, ajustado: lnA === null ? null : lnA + b * x };
   });
 
-  const datosResiduos = cluster.x.map((x, i) => ({
+  // Residuos en el espacio original del fenómeno: y_i − y_ajuste(t_i).
+  const datosResiduosOriginal = cluster.x.map((x, i) => {
+    const residuo = ajusteActual?.residuos[i];
+    return { x, residuo: Number.isFinite(residuo) ? (residuo as number) : null };
+  });
+
+  // Residuos en el espacio donde se minimizó. Los modelos que linealizan con
+  // logaritmo o inversa descartan los puntos con t = 0, que son los primeros del
+  // conjunto: el desfase vuelve a alinear cada residuo con su tiempo y deja en
+  // null los puntos descartados, para que el índice coincida con el gráfico de arriba.
+  const residuosLinealizados = ajusteActual?.residuosLinealizados ?? [];
+  const desfaseLinealizado = cluster.x.length - residuosLinealizados.length;
+  const datosResiduosLinealizados = cluster.x.map((x, i) => ({
     x,
-    residuo: ajusteActual?.residuosLinealizados[i] ?? 0,
+    residuo: i >= desfaseLinealizado ? residuosLinealizados[i - desfaseLinealizado] ?? null : null,
   }));
 
   const datosResiduosLineal = cluster.x.map((x, i) => ({ x, residuo: ajusteLineal.residuos[i] }));
@@ -361,13 +377,15 @@ export default function PaginaMinimosCuadrados() {
                   <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5">
                     <p className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400 mb-2">Variable independiente</p>
                     <p className="text-slate-800 dark:text-slate-300 text-sm leading-relaxed">
-                      <KaTeX expresionTex="X" /> — Tiempo transcurrido desde el inicio del ensayo, en minutos.
+                      <KaTeX expresionTex="t" /> — Tiempo transcurrido desde el inicio del ensayo, en minutos. Es la{' '}
+                      <KaTeX expresionTex="x" /> de la teoría, escrita con el nombre que tiene en este caso.
                     </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5">
                     <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-2">Variable dependiente</p>
                     <p className="text-slate-800 dark:text-slate-300 text-sm leading-relaxed">
-                      <KaTeX expresionTex="Y" /> — Concentración estimada del cultivo, en UFC/mL.
+                      <KaTeX expresionTex="y" /> — Concentración estimada del cultivo, en UFC/mL. La curva ajustada se escribe{' '}
+                      <KaTeX expresionTex="y(t)" />, con la misma letra que usa el marco teórico.
                     </p>
                   </div>
                 </div>
@@ -450,7 +468,7 @@ export default function PaginaMinimosCuadrados() {
                   </div>
                   {!verTablaCompleta && (
                     <p className="text-xs text-slate-600 dark:text-slate-500 mt-3">
-                      Se muestran los primeros registros y el último; el conjunto completo tiene {clusterDatos.x.length} pares (t, C).
+                      Se muestran los primeros registros y el último; el conjunto completo tiene {clusterDatos.x.length} pares (t, y).
                     </p>
                   )}
                 </div>
@@ -470,7 +488,7 @@ export default function PaginaMinimosCuadrados() {
                     <GraficoAjuste
                       datos={clusterDatos.x.map((x, i) => ({ x, observado: clusterDatos.y[i], ajustado: null }))}
                       etiquetaX="t (min)"
-                      etiquetaY="C (UFC/mL)"
+                      etiquetaY="y (UFC/mL)"
                       colorPuntos={clusterDatos.color}
                       altura={380}
                       conZoom
@@ -688,92 +706,13 @@ export default function PaginaMinimosCuadrados() {
                 </p>
 
                 {/* SELECTOR DE CLÚSTER */}
-                <div className="flex flex-wrap gap-2">
-                  {CLUSTERES.map((c) => {
-                    const activo = c.codigo === cluster.codigo;
-                    return (
-                      <button
-                        key={c.codigo}
-                        onClick={() => setCodigoCluster(c.codigo)}
-                        className={`px-4 py-2.5 rounded-lg text-sm font-bold transition-all border ${
-                          activo
-                            ? 'bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white shadow-md'
-                            : 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
-                        }`}
-                        style={activo ? { borderColor: c.color, color: c.color } : undefined}
-                      >
-                        <span className="italic">{c.nombre}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest ml-2 opacity-70">{c.temperatura} °C</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* COMPARACIÓN DE MODELOS CANDIDATOS */}
-                <div id="consigna-2" className="scroll-mt-28 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5 md:p-6">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-4">
-                    Consigna 2 · Comparación de los modelos candidatos
-                  </p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
-                          <th className="text-left py-2 pr-4">Modelo</th>
-                          <th className="text-left py-2 px-3">Ecuación obtenida</th>
-                          <th className="text-right py-2 px-3">Espacio de r²</th>
-                          <th className="text-right py-2 pl-3">r²</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ajustes.map((ajuste) => {
-                          const esMejor = ajuste.clave === mejorAjuste?.clave;
-                          return (
-                            <tr
-                              key={ajuste.clave}
-                              className={`border-b border-slate-200 dark:border-slate-800/70 ${esMejor ? 'bg-emerald-50 dark:bg-emerald-500/5' : ''}`}
-                            >
-                              <td className={`py-2.5 pr-4 font-semibold ${esMejor ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-800 dark:text-slate-300'}`}>
-                                {ajuste.nombre}
-                                {esMejor && <span className="ml-2 text-[10px] font-black uppercase tracking-widest">mejor r²</span>}
-                              </td>
-                              <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
-                                {ajuste.valido ? (
-                                  <div className="desplazamiento-formula"><KaTeX expresionTex={ajuste.ecuacionTex} /></div>
-                                ) : (
-                                  <span className="text-xs text-slate-600 dark:text-slate-500">{ajuste.motivo}</span>
-                                )}
-                              </td>
-                              <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-500">
-                                {ajuste.valido ? <KaTeX expresionTex={ajuste.espacio} /> : '—'}
-                              </td>
-                              <td
-                                className={`py-2.5 pl-3 text-right tabular-nums font-bold ${
-                                  esMejor ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'
-                                }`}
-                              >
-                                {ajuste.valido ? ajuste.r2.toFixed(4) : '—'}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-4">
-                    El modelo <strong className="text-emerald-700 dark:text-emerald-300">exponencial</strong> gana en los cuatro clústeres. El polinómico de
-                    2º grado queda cerca, pero agrega un parámetro más sin aportar interpretación física del fenómeno. La elección no es
-                    sólo estadística: la fase inicial del crecimiento bacteriano responde a{' '}
-                    <KaTeX expresionTex="dC/dt = k \cdot C" /> (la velocidad de crecimiento es proporcional a la población presente),
-                    cuya solución analítica es exactamente <KaTeX expresionTex="C(t) = C_0 \, e^{k t}" />. Estadística y teoría del
-                    fenómeno apuntan al mismo modelo.
-                  </p>
-                </div>
+                <SelectorClusteres seleccionado={codigoCluster} alSeleccionar={setCodigoCluster} />
 
                 {/* SELECTOR DE MODELO Y PROCEDIMIENTO */}
-                <div id="consigna-3" className="scroll-mt-28 space-y-4">
+                <div id="consigna-2" className="scroll-mt-28 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">
-                      Consigna 3 · Procedimiento de cálculo por mínimos cuadrados
+                      Consigna 2 · Procedimiento de cálculo por mínimos cuadrados
                     </p>
                     <div className="inline-flex flex-wrap bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner gap-1">
                       {ajustes.map((ajuste) => (
@@ -842,8 +781,24 @@ export default function PaginaMinimosCuadrados() {
                       </div>
 
                       <div className="border-t border-slate-200 dark:border-slate-700/50 pt-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">
-                          Paso 3 · Resolución por determinantes (Cramer)
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">
+                            Paso 3 · Resolución del sistema por sustitución
+                          </p>
+                          <Link
+                            href="/crout#calculadora"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-500/40 bg-blue-50 dark:bg-blue-500/10 text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300 hover:border-blue-500 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                          >
+                            Resolverlo con Crout
+                            <span aria-hidden="true">↗</span>
+                          </Link>
+                        </div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-3">
+                          Se despeja un coeficiente de la primera ecuación normal y se lo reemplaza en la segunda: queda una sola
+                          incógnita y de ahí sale todo lo demás. Es el camino más corto de leer para un sistema de 2×2. Para
+                          resolverlo con el método exacto —factorizando la matriz del sistema y obteniendo el vector de incógnitas
+                          por descenso y remonte— está la calculadora de Crout: cargá la matriz de coeficientes y el vector de
+                          términos independientes del Paso 2 y devuelve los mismos valores.
                         </p>
                         <ol className="space-y-2">
                           {ajusteActual.pasos.map((paso) => (
@@ -869,6 +824,66 @@ export default function PaginaMinimosCuadrados() {
                   )}
                 </div>
 
+                {/* COMPARACIÓN DE MODELOS CANDIDATOS */}
+                <div id="consigna-3" className="scroll-mt-28 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5 md:p-6">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-4">
+                    Consigna 3 · Comparación de los modelos candidatos y elección
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                          <th className="text-left py-2 pr-4">Modelo</th>
+                          <th className="text-left py-2 px-3">Ecuación obtenida</th>
+                          <th className="text-right py-2 px-3">Espacio de r²</th>
+                          <th className="text-right py-2 pl-3">r²</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ajustes.map((ajuste) => {
+                          const esMejor = ajuste.clave === mejorAjuste?.clave;
+                          return (
+                            <tr
+                              key={ajuste.clave}
+                              className={`border-b border-slate-200 dark:border-slate-800/70 ${esMejor ? 'bg-emerald-50 dark:bg-emerald-500/5' : ''}`}
+                            >
+                              <td className={`py-2.5 pr-4 font-semibold ${esMejor ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-800 dark:text-slate-300'}`}>
+                                {ajuste.nombre}
+                                {esMejor && <span className="ml-2 text-[10px] font-black uppercase tracking-widest">mejor r²</span>}
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                                {ajuste.valido ? (
+                                  <div className="desplazamiento-formula"><KaTeX expresionTex={ajuste.ecuacionTex} /></div>
+                                ) : (
+                                  <span className="text-xs text-slate-600 dark:text-slate-500">{ajuste.motivo}</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-500">
+                                {ajuste.valido ? <KaTeX expresionTex={ajuste.espacio} /> : '—'}
+                              </td>
+                              <td
+                                className={`py-2.5 pl-3 text-right tabular-nums font-bold ${
+                                  esMejor ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'
+                                }`}
+                              >
+                                {ajuste.valido ? ajuste.r2.toFixed(4) : '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-4">
+                    El modelo <strong className="text-emerald-700 dark:text-emerald-300">exponencial</strong> gana en los cuatro clústeres. El polinómico de
+                    2º grado queda cerca, pero agrega un parámetro más sin aportar interpretación física del fenómeno. La elección no es
+                    sólo estadística: la fase inicial del crecimiento bacteriano responde a{' '}
+                    <KaTeX expresionTex="\frac{dy}{dt} = k \cdot y" /> (la velocidad de crecimiento es proporcional a la población
+                    presente), cuya solución analítica es exactamente <KaTeX expresionTex="y(t) = y_0 \, e^{k t}" />. Estadística y teoría del
+                    fenómeno apuntan al mismo modelo.
+                  </p>
+                </div>
+
                 {/* BONDAD Y GRÁFICOS */}
                 {ajusteActual?.valido && (
                   <div id="consigna-4" className="scroll-mt-28 space-y-4">
@@ -881,7 +896,7 @@ export default function PaginaMinimosCuadrados() {
                         { etiqueta: 'Media', valor: formatearNumero(ajusteActual.media, 4), tex: '\\bar{y}' },
                         { etiqueta: 'ST', valor: formatearNumero(ajusteActual.ST, 4), tex: 'ST' },
                         { etiqueta: 'SR', valor: formatearNumero(ajusteActual.SR, 4), tex: 'SR' },
-                        { etiqueta: 'Bondad', valor: ajusteActual.r2.toFixed(6), tex: 'r^2' },
+                        { etiqueta: 'Bondad', valor: formatearNumero(ajusteActual.r2, 6), tex: 'r^2' },
                       ].map((dato) => (
                         <div
                           key={dato.etiqueta}
@@ -894,13 +909,13 @@ export default function PaginaMinimosCuadrados() {
                           <div className="desplazamiento-formula text-sm mb-1">
                             <KaTeX expresionTex={dato.tex} />
                           </div>
-                          <p
-                            className={`text-sm tabular-nums font-bold break-all ${
+                          <div
+                            className={`desplazamiento-formula text-sm font-bold ${
                               dato.etiqueta === 'Bondad' ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-800 dark:text-slate-300'
                             }`}
                           >
-                            {dato.valor}
-                          </p>
+                            <KaTeX expresionTex={dato.valor} />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -912,58 +927,88 @@ export default function PaginaMinimosCuadrados() {
                       {ajusteActual.r2 > 0.85 ? ', por encima del umbral de referencia de 0,85.' : ', por debajo del umbral de referencia de 0,85.'}
                     </p>
 
+                    {/* Cada columna es un espacio de trabajo: arriba los datos con su curva,
+                        abajo los residuos de esa misma curva. Los dos gráficos de una columna
+                        comparten `sincronizarCon`, así la barra vertical del tooltip los recorre
+                        a la vez y el error de cada punto se lee contra el dato que lo produjo. */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">
-                          Datos y curva ajustada
-                        </p>
-                        <GraficoAjuste
-                          datos={datosAjuste}
-                          etiquetaX="t (min)"
-                          etiquetaY="C (UFC/mL)"
-                          colorPuntos={cluster.color}
-                          nombreCurva={`Ajuste ${ajusteActual.nombre.toLowerCase()}`}
-                        />
+                      <div className="space-y-4">
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-slate-600 dark:text-slate-500">
+                            Datos y curva ajustada · espacio de y
+                          </p>
+                          <GraficoAjuste
+                            datos={datosAjuste}
+                            etiquetaX="t (min)"
+                            etiquetaY="y (UFC/mL)"
+                            colorPuntos={cluster.color}
+                            nombreCurva={`Ajuste ${ajusteActual.nombre.toLowerCase()}`}
+                            sincronizarCon="ajuste-espacio-y"
+                          />
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-emerald-700 dark:text-emerald-400">
+                            Residuos en el espacio de y
+                          </p>
+                          <GraficoResiduos
+                            datos={datosResiduosOriginal}
+                            etiquetaX="t (min)"
+                            etiquetaY="residuo"
+                            color={cluster.color}
+                            sincronizarCon="ajuste-espacio-y"
+                          />
+                        </div>
                       </div>
 
-                      <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">
-                          {ajusteActual.clave === 'exponencial'
-                            ? 'Linealización: ln(C) en función de t'
-                            : 'Datos en escala logarítmica'}
-                        </p>
-                        <GraficoAjuste
-                          datos={datosLinealizacion}
-                          etiquetaX="t (min)"
-                          etiquetaY="ln(C)"
-                          colorPuntos={cluster.color}
-                          nombreCurva="Recta de ajuste"
-                        />
+                      <div className="space-y-4">
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-slate-600 dark:text-slate-500">
+                            {ajusteActual.clave === 'exponencial'
+                              ? 'Linealización: ln(y) en función de t'
+                              : 'Datos en escala logarítmica'}
+                          </p>
+                          <GraficoAjuste
+                            datos={datosLinealizacion}
+                            etiquetaX="t (min)"
+                            etiquetaY="ln(y)"
+                            colorPuntos={cluster.color}
+                            nombreCurva="Recta de ajuste"
+                            sincronizarCon="ajuste-espacio-linealizado"
+                          />
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-emerald-700 dark:text-emerald-400">
+                            Residuos en el espacio linealizado
+                          </p>
+                          <GraficoResiduos
+                            datos={datosResiduosLinealizados}
+                            etiquetaX="t (min)"
+                            etiquetaY="residuo"
+                            color={cluster.color}
+                            sincronizarCon="ajuste-espacio-linealizado"
+                          />
+                        </div>
                       </div>
+                    </div>
 
-                      <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-3">
-                          Residuos del modelo {ajusteActual.nombre.toLowerCase()}
-                        </p>
-                        <GraficoResiduos
-                          datos={datosResiduos}
-                          etiquetaX="t (min)"
-                          etiquetaY="residuo"
-                          color={cluster.color}
-                        />
-                      </div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Pasando el mouse por cualquiera de los cuatro gráficos, la barra vertical se mueve a la vez en el gráfico de
+                      arriba y en el de abajo de esa columna: se ve el dato medido, el valor que da la curva y el error entre los dos
+                      en el mismo instante. La columna izquierda trabaja en el espacio original —UFC/mL, donde los residuos crecen
+                      junto con la concentración— y la derecha en el espacio linealizado, que es donde el sistema normal minimizó el
+                      error y donde, por lo tanto, se mide la bondad del ajuste.
+                    </p>
 
-                      <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">
-                          Residuos del modelo lineal (contraste)
-                        </p>
-                        <GraficoResiduos
-                          datos={datosResiduosLineal}
-                          etiquetaX="t (min)"
-                          etiquetaY="residuo"
-                          color="#f59e0b"
-                        />
-                      </div>
+                    <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
+                      <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-amber-600 dark:text-amber-400">
+                        Residuos del modelo lineal (contraste)
+                      </p>
+                      <GraficoResiduos
+                        datos={datosResiduosLineal}
+                        etiquetaX="t (min)"
+                        etiquetaY="residuo"
+                        color="#f59e0b"
+                      />
                     </div>
 
                     <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -982,7 +1027,7 @@ export default function PaginaMinimosCuadrados() {
                           Los dos parámetros que devolvió el sistema no son números sueltos: cada uno significa algo concreto del
                           cultivo. <KaTeX expresionTex={`a = ${formatearNumero(ajusteActual.parametros[0].valor, 2)}`} /> es la
                           concentración estimada en el instante inicial, porque al reemplazar{' '}
-                          <KaTeX expresionTex="t = 0" /> queda <KaTeX expresionTex="C(0) = a \cdot e^{0} = a" />. Y{' '}
+                          <KaTeX expresionTex="t = 0" /> queda <KaTeX expresionTex="y(0) = a \cdot e^{0} = a" />. Y{' '}
                           <KaTeX expresionTex={`b = ${formatearNumero(ajusteActual.parametros[1].valor, 6)} \\; \\text{min}^{-1}`} /> es
                           la tasa de crecimiento específica: cuanto más grande, más rápido crece el cultivo.
                         </p>
@@ -996,10 +1041,10 @@ export default function PaginaMinimosCuadrados() {
 
                         <ol className="space-y-2 mb-4">
                           {[
-                            { tex: String.raw`C(t + t_{1/2}) = 2 \cdot C(t)`, nota: 'Planteamos que pasó el doble.' },
+                            { tex: String.raw`y(t + t_{1/2}) = 2 \cdot y(t)`, nota: 'Planteamos que pasó el doble.' },
                             { tex: String.raw`a \, e^{b(t + t_{1/2})} = 2 \, a \, e^{b t}`, nota: 'Reemplazamos por el modelo.' },
                             { tex: String.raw`e^{b t} \cdot e^{b \, t_{1/2}} = 2 \, e^{b t}`, nota: 'Separamos el exponente; a se cancela.' },
-                            { tex: String.raw`e^{b \, t_{1/2}} = 2`, nota: 'Dividimos por e^{bt}: el instante t no importa.' },
+                            { tex: String.raw`e^{b \, t_{1/2}} = 2`, nota: 'Dividimos por el factor común: el instante t no importa.' },
                             { tex: String.raw`b \cdot t_{1/2} = \ln(2)`, nota: 'Aplicamos ln a ambos miembros.' },
                             { tex: String.raw`t_{1/2} = \frac{\ln(2)}{b}`, nota: 'Despejamos el tiempo de duplicación.' },
                           ].map((paso, indice) => (
@@ -1104,7 +1149,7 @@ export default function PaginaMinimosCuadrados() {
                       puntos: c.x.map((x, i) => ({ x, y: c.y[i] })),
                     }))}
                     etiquetaX="t (min)"
-                    etiquetaY="C (UFC/mL), escala log"
+                    etiquetaY="y (UFC/mL), escala log"
                   />
                   <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-4">
                     En escala logarítmica una exponencial se ve como una recta. Las cuatro nubes se alinean, lo que confirma
@@ -1278,13 +1323,13 @@ export default function PaginaMinimosCuadrados() {
                       claramente por encima del resto de los candidatos.
                     </li>
                     <li>
-                      <strong className="text-emerald-700 dark:text-emerald-300">Análisis gráfico:</strong> la linealización ln(C) vs. t es prácticamente una
+                      <strong className="text-emerald-700 dark:text-emerald-300">Análisis gráfico:</strong> la linealización ln(y) vs. t es prácticamente una
                       recta, y los residuos no muestran patrones sistemáticos, a diferencia de la marcada &ldquo;U&rdquo; del modelo
                       lineal.
                     </li>
                     <li>
                       <strong className="text-emerald-700 dark:text-emerald-300">Respaldo teórico:</strong> la fase exponencial del crecimiento bacteriano se
-                      rige por <KaTeX expresionTex="dC/dt = k \cdot C" />, cuya solución es precisamente la función ajustada.
+                      rige por <KaTeX expresionTex="\frac{dy}{dt} = k \cdot y" />, cuya solución es precisamente la función ajustada.
                     </li>
                   </ul>
                   <p className="text-slate-800 dark:text-slate-300 leading-relaxed">

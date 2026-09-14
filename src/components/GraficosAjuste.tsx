@@ -54,6 +54,10 @@ function usarPaleta() {
   };
 }
 
+// Barra vertical del tooltip. Con `syncId` compartido, los gráficos emparejados
+// la dibujan sobre el mismo punto, así se lee el dato y su residuo a la vez.
+const CURSOR_VERTICAL = { stroke: '#94a3b8', strokeWidth: 1.5, strokeDasharray: '4 4' };
+
 const formatearEje = (valor: number) => {
   const abs = Math.abs(valor);
   if (abs >= 1e6) return `${(valor / 1e6).toFixed(1)}M`;
@@ -74,6 +78,9 @@ interface PropiedadesGraficoAjuste {
   altura?: number;
   // Agrega la barra inferior para acercarse a un tramo del eje X.
   conZoom?: boolean;
+  // Identificador compartido: los gráficos que lo comparten mueven juntos la
+  // barra vertical del tooltip, punto a punto.
+  sincronizarCon?: string;
 }
 
 // Nube de puntos experimental con la curva de ajuste superpuesta.
@@ -87,12 +94,17 @@ export function GraficoAjuste({
   escalaLogaritmica = false,
   altura = 320,
   conZoom = false,
+  sincronizarCon,
 }: PropiedadesGraficoAjuste) {
   const paleta = usarPaleta();
 
   return (
     <ResponsiveContainer width="100%" height={altura}>
-      <ComposedChart data={datos} margin={{ top: 10, right: 16, left: 4, bottom: conZoom ? 52 : 22 }}>
+      <ComposedChart
+        data={datos}
+        syncId={sincronizarCon}
+        margin={{ top: 10, right: 16, left: 4, bottom: conZoom ? 52 : 22 }}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke={paleta.grilla} />
         <XAxis
           dataKey="x"
@@ -113,7 +125,7 @@ export function GraficoAjuste({
           label={{ value: etiquetaY, angle: -90, position: 'insideLeft', fill: paleta.etiqueta, fontSize: 11 }}
           {...paleta.eje}
         />
-        <Tooltip contentStyle={paleta.tooltip} formatter={(valor) => formatearEje(Number(valor))} />
+        <Tooltip contentStyle={paleta.tooltip} formatter={(valor) => formatearEje(Number(valor))} cursor={CURSOR_VERTICAL} />
         <Legend wrapperStyle={{ paddingTop: 14, fontSize: 12 }} />
         <Scatter dataKey="observado" name="Datos medidos" fill={colorPuntos} isAnimationActive={false} />
         <Line
@@ -142,21 +154,30 @@ export function GraficoAjuste({
 }
 
 interface PropiedadesGraficoResiduos {
-  datos: { x: number; residuo: number }[];
+  // `null` para los puntos que el modelo dejó fuera de su dominio al linealizar.
+  datos: { x: number; residuo: number | null }[];
   etiquetaX: string;
   etiquetaY: string;
   color: string;
   altura?: number;
+  sincronizarCon?: string;
 }
 
 // Residuos contra x: si el modelo es adecuado, deben repartirse sin patrón
 // alrededor del cero; una curvatura sistemática delata un modelo mal elegido.
-export function GraficoResiduos({ datos, etiquetaX, etiquetaY, color, altura = 260 }: PropiedadesGraficoResiduos) {
+export function GraficoResiduos({
+  datos,
+  etiquetaX,
+  etiquetaY,
+  color,
+  altura = 260,
+  sincronizarCon,
+}: PropiedadesGraficoResiduos) {
   const paleta = usarPaleta();
 
   return (
     <ResponsiveContainer width="100%" height={altura}>
-      <ComposedChart data={datos} margin={{ top: 10, right: 16, left: 4, bottom: 22 }}>
+      <ComposedChart data={datos} syncId={sincronizarCon} margin={{ top: 10, right: 16, left: 4, bottom: 22 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={paleta.grilla} />
         <XAxis
           dataKey="x"
@@ -174,7 +195,7 @@ export function GraficoResiduos({ datos, etiquetaX, etiquetaY, color, altura = 2
           label={{ value: etiquetaY, angle: -90, position: 'insideLeft', fill: paleta.etiqueta, fontSize: 11 }}
           {...paleta.eje}
         />
-        <Tooltip contentStyle={paleta.tooltip} formatter={(valor) => formatearEje(Number(valor))} />
+        <Tooltip contentStyle={paleta.tooltip} formatter={(valor) => formatearEje(Number(valor))} cursor={CURSOR_VERTICAL} />
         <ReferenceLine y={0} stroke={paleta.referencia} strokeWidth={2} />
         <Scatter dataKey="residuo" name="Residuo" fill={color} isAnimationActive={false} />
       </ComposedChart>

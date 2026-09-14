@@ -1,7 +1,9 @@
 // Ajuste por mínimos cuadrados siguiendo el apunte de cátedra:
 // cada modelo no lineal se linealiza, se arma el sistema de ecuaciones normales
-// y se resuelve por determinantes (Cramer). Se registran las sumatorias y los
-// pasos intermedios para poder mostrar el procedimiento, no sólo el resultado.
+// y se resuelve por sustitución (eliminación + despeje), que es como se escribe
+// a mano y es el mismo camino que la factorización de Crout hace de forma exacta.
+// Se registran las sumatorias y los pasos intermedios para poder mostrar el
+// procedimiento, no sólo el resultado.
 
 export type ClaveModelo = 'lineal' | 'exponencial' | 'potencial' | 'polinomico2' | 'cociente';
 
@@ -59,25 +61,56 @@ export function formatearNumero(valor: number, decimales = 4): string {
 
 const suma = (valores: number[]) => valores.reduce((acumulado, v) => acumulado + v, 0);
 
-// Resuelve un sistema lineal n×n por Cramer. n es 2 o 3 en todos los modelos del apunte.
-function determinante(m: number[][]): number {
-  const n = m.length;
-  if (n === 1) return m[0][0];
-  if (n === 2) return m[0][0] * m[1][1] - m[0][1] * m[1][0];
-  let total = 0;
-  for (let j = 0; j < n; j++) {
-    const menor = m.slice(1).map((fila) => fila.filter((_, c) => c !== j));
-    total += (j % 2 === 0 ? 1 : -1) * m[0][j] * determinante(menor);
-  }
-  return total;
+export interface Sustitucion2x2 {
+  a1: number;
+  a2: number;
+  numerador: number;
+  denominador: number;
 }
 
-export function resolverPorCramer(A: number[][], b: number[]): { solucion: number[]; delta: number; deltas: number[] } {
-  const delta = determinante(A);
-  const deltas = A.map((_, columna) =>
-    determinante(A.map((fila, i) => fila.map((valor, j) => (j === columna ? b[i] : valor))))
-  );
-  return { solucion: deltas.map((d) => d / delta), delta, deltas };
+// Sistema normal 2×2:
+//   n · a1 + Sx · a2 = Sy
+//   Sx · a1 + Sxx · a2 = Sxy
+// Se despeja a1 de la primera ecuación, se reemplaza en la segunda y queda una
+// sola incógnita. Es el mismo resultado que daría Cramer, pero leído como se
+// resuelve a mano.
+export function resolver2x2PorSustitucion(
+  n: number,
+  sx: number,
+  sxx: number,
+  sy: number,
+  sxy: number
+): Sustitucion2x2 {
+  const numerador = sxy - (sx * sy) / n;
+  const denominador = sxx - (sx * sx) / n;
+  const a2 = numerador / denominador;
+  const a1 = (sy - sx * a2) / n;
+  return { a1, a2, numerador, denominador };
+}
+
+// Eliminación hacia adelante + sustitución hacia atrás para el sistema 3×3 del
+// modelo polinómico. Las matrices normales de mínimos cuadrados son simétricas y
+// definidas positivas, así que con datos reales el pivote nunca se anula.
+// ponytail: sin pivoteo parcial; agregarlo si alguna vez se ajustan grados altos.
+export function resolverPorEliminacion(
+  A: number[][],
+  b: number[]
+): { solucion: number[]; triangular: number[][] } {
+  const n = A.length;
+  const M = A.map((fila, i) => [...fila, b[i]]);
+  for (let k = 0; k < n - 1; k++) {
+    for (let i = k + 1; i < n; i++) {
+      const factor = M[i][k] / M[k][k];
+      for (let j = k; j <= n; j++) M[i][j] -= factor * M[k][j];
+    }
+  }
+  const solucion = new Array<number>(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    let acumulado = 0;
+    for (let j = i + 1; j < n; j++) acumulado += M[i][j] * solucion[j];
+    solucion[i] = (M[i][n] - acumulado) / M[i][i];
+  }
+  return { solucion, triangular: M };
 }
 
 // Bondad del ajuste según el apunte: r² = (ST − SR) / ST, medido sobre la
@@ -99,6 +132,49 @@ function sistema2x2Tex(n: number, sx: number, sxx: number, sy: number, sxy: numb
   ];
 }
 
+// Los cuatro pasos de la sustitución con los números ya reemplazados. Los símbolos
+// se reciben por parámetro para poder reutilizarlos en y/x, ln(y)/x, ln(y)/ln(x)
+// y 1/y contra 1/x sin duplicar el texto.
+interface SimbolosSistema {
+  a: string;
+  b: string;
+  sx: string;
+  sxx: string;
+  sy: string;
+  sxy: string;
+}
+
+function pasosSustitucion2x2(
+  sumas: { n: number; sx: number; sxx: number; sy: number; sxy: number },
+  simbolos: SimbolosSistema,
+  resultado: Sustitucion2x2,
+  decimalesA = 4,
+  decimalesB = 4
+): { titulo: string; tex: string }[] {
+  const { n, sx, sy } = sumas;
+  const { a, b } = simbolos;
+  const { a1, a2, numerador, denominador } = resultado;
+
+  return [
+    {
+      titulo: 'Despejo el primer coeficiente de la primera ecuación',
+      tex: `${a} = \\dfrac{${simbolos.sy} - ${simbolos.sx} \\cdot ${b}}{n} = \\dfrac{${tex(sy)} - ${tex(sx)} \\, ${b}}{${tex(n)}}`,
+    },
+    {
+      titulo: 'Reemplazo en la segunda ecuación',
+      tex: `${simbolos.sx} \\cdot \\dfrac{${simbolos.sy} - ${simbolos.sx} \\cdot ${b}}{n} + ${simbolos.sxx} \\cdot ${b} = ${simbolos.sxy}`,
+    },
+    {
+      titulo: 'Agrupo y despejo la única incógnita que queda',
+      tex: `${b} = \\dfrac{${simbolos.sxy} - \\dfrac{${simbolos.sx} \\cdot ${simbolos.sy}}{n}}{${simbolos.sxx} - \\dfrac{\\left(${simbolos.sx}\\right)^2}{n}} = \\dfrac{${tex(numerador)}}{${tex(denominador)}} = ${tex(a2, decimalesB)}`,
+    },
+    {
+      titulo: 'Vuelvo a la primera ecuación con ese valor',
+      tex: `${a} = \\dfrac{${tex(sy)} - ${tex(sx)} \\cdot ${tex(a2, decimalesB)}}{${tex(n)}} = ${tex(a1, decimalesA)}`,
+    },
+  ];
+}
+
 interface OpcionesAjuste {
   x: number[];
   y: number[];
@@ -114,8 +190,8 @@ export function ajustarLineal({ x, y }: OpcionesAjuste): Ajuste {
   const sxx = suma(x.map((v) => v * v));
   const sxy = suma(x.map((v, i) => v * y[i]));
 
-  const { solucion, delta, deltas } = resolverPorCramer([[n, sx], [sx, sxx]], [sy, sxy]);
-  const [a1, a2] = solucion;
+  const sustitucion = resolver2x2PorSustitucion(n, sx, sxx, sy, sxy);
+  const { a1, a2 } = sustitucion;
   const predecir = (v: number) => a1 + a2 * v;
   const ajustados = x.map(predecir);
   const { media, ST, SR, r2 } = bondad(y, ajustados);
@@ -138,11 +214,11 @@ export function ajustarLineal({ x, y }: OpcionesAjuste): Ajuste {
       { simbolo: '\\sum x_i y_i', valor: sxy },
     ],
     sistemaTex: sistema2x2Tex(n, sx, sxx, sy, sxy, 'a_1', 'a_2'),
-    pasos: [
-      { titulo: 'Determinante del sistema', tex: `\\Delta = n \\cdot \\sum x_i^2 - \\left(\\sum x_i\\right)^2 = ${tex(delta)}` },
-      { titulo: 'Ordenada al origen', tex: `a_1 = \\frac{\\Delta_1}{\\Delta} = \\frac{${tex(deltas[0])}}{${tex(delta)}} = ${tex(a1)}` },
-      { titulo: 'Pendiente', tex: `a_2 = \\frac{\\Delta_2}{\\Delta} = \\frac{${tex(deltas[1])}}{${tex(delta)}} = ${tex(a2)}` },
-    ],
+    pasos: pasosSustitucion2x2(
+      { n, sx, sxx, sy, sxy },
+      { a: 'a_1', b: 'a_2', sx: '\\sum x_i', sxx: '\\sum x_i^2', sy: '\\sum y_i', sxy: '\\sum x_i y_i' },
+      sustitucion
+    ),
     espacio: 'y',
     media,
     ST,
@@ -169,8 +245,9 @@ export function ajustarExponencial({ x, y, unidadPendiente }: OpcionesAjuste): A
   const slny = suma(lny);
   const sxlny = suma(x.map((v, i) => v * lny[i]));
 
-  const { solucion, delta, deltas } = resolverPorCramer([[n, sx], [sx, sxx]], [slny, sxlny]);
-  const [lnA, b] = solucion;
+  const sustitucion = resolver2x2PorSustitucion(n, sx, sxx, slny, sxlny);
+  const lnA = sustitucion.a1;
+  const b = sustitucion.a2;
   const a = Math.exp(lnA);
 
   const predecir = (v: number) => a * Math.exp(b * v);
@@ -196,10 +273,14 @@ export function ajustarExponencial({ x, y, unidadPendiente }: OpcionesAjuste): A
     ],
     sistemaTex: sistema2x2Tex(n, sx, sxx, slny, sxlny, '\\ln(a)', 'b'),
     pasos: [
-      { titulo: 'Determinante del sistema', tex: `\\Delta = n \\cdot \\sum x_i^2 - \\left(\\sum x_i\\right)^2 = ${tex(delta)}` },
-      { titulo: 'Primer coeficiente', tex: `\\ln(a) = \\frac{\\Delta_1}{\\Delta} = \\frac{${tex(deltas[0])}}{${tex(delta)}} = ${tex(lnA, 6)}` },
-      { titulo: 'Recupero de a', tex: `a = e^{\\ln(a)} = e^{${tex(lnA, 6)}} = ${tex(a, 2)}` },
-      { titulo: 'Segundo coeficiente', tex: `b = \\frac{\\Delta_2}{\\Delta} = \\frac{${tex(deltas[1])}}{${tex(delta)}} = ${tex(b, 6)}` },
+      ...pasosSustitucion2x2(
+        { n, sx, sxx, sy: slny, sxy: sxlny },
+        { a: '\\ln(a)', b: 'b', sx: '\\sum x_i', sxx: '\\sum x_i^2', sy: '\\sum \\ln(y_i)', sxy: '\\sum x_i \\ln(y_i)' },
+        sustitucion,
+        6,
+        6
+      ),
+      { titulo: 'Recupero a deshaciendo el logaritmo', tex: `a = e^{\\ln(a)} = e^{${tex(lnA, 6)}} = ${tex(a, 2)}` },
     ],
     espacio: '\\ln(y)',
     media,
@@ -229,8 +310,9 @@ export function ajustarPotencial({ x, y }: OpcionesAjuste): Ajuste {
   const slny = suma(lny);
   const slnxlny = suma(lnx.map((v, i) => v * lny[i]));
 
-  const { solucion, delta, deltas } = resolverPorCramer([[n, slnx], [slnx, slnxx]], [slny, slnxlny]);
-  const [lnA, b] = solucion;
+  const sustitucion = resolver2x2PorSustitucion(n, slnx, slnxx, slny, slnxlny);
+  const lnA = sustitucion.a1;
+  const b = sustitucion.a2;
   const a = Math.exp(lnA);
 
   const predecir = (v: number) => (v > 0 ? a * v ** b : NaN);
@@ -258,10 +340,21 @@ export function ajustarPotencial({ x, y }: OpcionesAjuste): Ajuste {
     ],
     sistemaTex: sistema2x2Tex(n, slnx, slnxx, slny, slnxlny, '\\ln(a)', 'b'),
     pasos: [
-      { titulo: 'Determinante del sistema', tex: `\\Delta = n \\cdot \\sum (\\ln x_i)^2 - \\left(\\sum \\ln x_i\\right)^2 = ${tex(delta)}` },
-      { titulo: 'Primer coeficiente', tex: `\\ln(a) = \\frac{${tex(deltas[0])}}{${tex(delta)}} = ${tex(lnA, 6)}` },
-      { titulo: 'Recupero de a', tex: `a = e^{${tex(lnA, 6)}} = ${tex(a, 2)}` },
-      { titulo: 'Segundo coeficiente', tex: `b = \\frac{${tex(deltas[1])}}{${tex(delta)}} = ${tex(b, 6)}` },
+      ...pasosSustitucion2x2(
+        { n, sx: slnx, sxx: slnxx, sy: slny, sxy: slnxlny },
+        {
+          a: '\\ln(a)',
+          b: 'b',
+          sx: '\\sum \\ln(x_i)',
+          sxx: '\\sum (\\ln x_i)^2',
+          sy: '\\sum \\ln(y_i)',
+          sxy: '\\sum \\ln(x_i)\\ln(y_i)',
+        },
+        sustitucion,
+        6,
+        6
+      ),
+      { titulo: 'Recupero a deshaciendo el logaritmo', tex: `a = e^{\\ln(a)} = e^{${tex(lnA, 6)}} = ${tex(a, 2)}` },
     ],
     espacio: '\\ln(y)',
     media,
@@ -286,7 +379,7 @@ export function ajustarPolinomico2({ x, y }: OpcionesAjuste): Ajuste {
   const sxy = suma(x.map((v, i) => v * y[i]));
   const sx2y = suma(x.map((v, i) => v ** 2 * y[i]));
 
-  const { solucion, delta, deltas } = resolverPorCramer(
+  const { solucion, triangular } = resolverPorEliminacion(
     [
       [n, sx, sx2],
       [sx, sx2, sx3],
@@ -326,10 +419,22 @@ export function ajustarPolinomico2({ x, y }: OpcionesAjuste): Ajuste {
       `${tex(sx2)} a_1 + ${tex(sx3)} a_2 + ${tex(sx4)} a_3 = ${tex(sx2y)}`,
     ],
     pasos: [
-      { titulo: 'Determinante del sistema', tex: `\\Delta = ${tex(delta)}` },
-      { titulo: 'Coeficiente independiente', tex: `a_1 = \\frac{${tex(deltas[0])}}{${tex(delta)}} = ${tex(a1, 2)}` },
-      { titulo: 'Coeficiente lineal', tex: `a_2 = \\frac{${tex(deltas[1])}}{${tex(delta)}} = ${tex(a2, 4)}` },
-      { titulo: 'Coeficiente cuadrático', tex: `a_3 = \\frac{${tex(deltas[2])}}{${tex(delta)}} = ${tex(a3, 6)}` },
+      {
+        titulo: 'Triangulo el sistema eliminando hacia abajo',
+        tex: `\\left[\\begin{array}{ccc|c} ${tex(triangular[0][0])} & ${tex(triangular[0][1])} & ${tex(triangular[0][2])} & ${tex(triangular[0][3])} \\\\ 0 & ${tex(triangular[1][1])} & ${tex(triangular[1][2])} & ${tex(triangular[1][3])} \\\\ 0 & 0 & ${tex(triangular[2][2])} & ${tex(triangular[2][3])} \\end{array}\\right]`,
+      },
+      {
+        titulo: 'Sustitución hacia atrás · coeficiente cuadrático',
+        tex: `a_3 = \\dfrac{${tex(triangular[2][3])}}{${tex(triangular[2][2])}} = ${tex(a3, 6)}`,
+      },
+      {
+        titulo: 'Sustitución hacia atrás · coeficiente lineal',
+        tex: `a_2 = \\dfrac{${tex(triangular[1][3])} - ${tex(triangular[1][2])} \\cdot a_3}{${tex(triangular[1][1])}} = ${tex(a2, 4)}`,
+      },
+      {
+        titulo: 'Sustitución hacia atrás · coeficiente independiente',
+        tex: `a_1 = \\dfrac{${tex(triangular[0][3])} - ${tex(triangular[0][1])} \\cdot a_2 - ${tex(triangular[0][2])} \\cdot a_3}{${tex(triangular[0][0])}} = ${tex(a1, 2)}`,
+      },
     ],
     espacio: 'y',
     media,
@@ -359,8 +464,9 @@ export function ajustarCociente({ x, y }: OpcionesAjuste): Ajuste {
   const sInvY = suma(invY);
   const sInvXY = suma(invX.map((v, i) => v * invY[i]));
 
-  const { solucion, delta, deltas } = resolverPorCramer([[n, sInvX], [sInvX, sInvXX]], [sInvY, sInvXY]);
-  const [invA, bSobreA] = solucion;
+  const sustitucion = resolver2x2PorSustitucion(n, sInvX, sInvXX, sInvY, sInvXY);
+  const invA = sustitucion.a1;
+  const bSobreA = sustitucion.a2;
   const a = 1 / invA;
   const b = bSobreA * a;
 
@@ -389,10 +495,22 @@ export function ajustarCociente({ x, y }: OpcionesAjuste): Ajuste {
     ],
     sistemaTex: sistema2x2Tex(n, sInvX, sInvXX, sInvY, sInvXY, '\\tfrac{1}{a}', '\\tfrac{b}{a}'),
     pasos: [
-      { titulo: 'Determinante del sistema', tex: `\\Delta = ${tex(delta)}` },
-      { titulo: 'Primer coeficiente', tex: `\\frac{1}{a} = \\frac{${tex(deltas[0])}}{${tex(delta)}} = ${formatearNumero(invA, 10)}` },
-      { titulo: 'Recupero de a', tex: `a = ${tex(a, 2)}` },
-      { titulo: 'Recupero de b', tex: `b = \\frac{b}{a} \\cdot a = ${tex(b, 4)}` },
+      ...pasosSustitucion2x2(
+        { n, sx: sInvX, sxx: sInvXX, sy: sInvY, sxy: sInvXY },
+        {
+          a: '\\tfrac{1}{a}',
+          b: '\\tfrac{b}{a}',
+          sx: '\\sum \\tfrac{1}{x_i}',
+          sxx: '\\sum \\left(\\tfrac{1}{x_i}\\right)^2',
+          sy: '\\sum \\tfrac{1}{y_i}',
+          sxy: '\\sum \\tfrac{1}{x_i}\\tfrac{1}{y_i}',
+        },
+        sustitucion,
+        10,
+        6
+      ),
+      { titulo: 'Recupero a invirtiendo el primer coeficiente', tex: `a = \\dfrac{1}{\\tfrac{1}{a}} = ${tex(a, 2)}` },
+      { titulo: 'Recupero b multiplicando por a', tex: `b = \\tfrac{b}{a} \\cdot a = ${tex(b, 4)}` },
     ],
     espacio: '1/y',
     media,
