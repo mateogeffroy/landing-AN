@@ -68,6 +68,8 @@ npm start
 | `/` | Home: hero, grilla de proyectos (tarjetas tipo "capítulo") e integrantes |
 | `/fourier` | Trabajo práctico de Series de Fourier: teoría + calculadora interactiva |
 | `/crout` | Trabajo práctico del método de Crout (L·U): teoría + calculadora interactiva |
+| `/minimos-cuadrados` | Trabajo práctico de ajuste por mínimos cuadrados (Caso 2) |
+| `/edo` | Exposición de EDO: comparativa de Taylor, Euler Mejorado y Runge-Kutta de grado 2 |
 
 Ambas vistas de proyecto comparten el mismo patrón de navegación: una **guía lateral fija** (sólo en escritorio) con un ícono propio por sección que hace scroll suave (vía Lenis) hasta el bloque correspondiente. La navbar superior también es sensible a la ruta: en el home muestra anclas a "Proyectos"/"Integrantes"; en las vistas de proyecto muestra "Inicio · Fourier · Crout" en ese orden, resaltando la sección activa, con menú hamburguesa en mobile.
 
@@ -158,6 +160,27 @@ $$
 2. **Factorización**: se aplica la fórmula general de arriba de forma iterativa, columna a columna.
 3. **Resolución**: sustitución hacia adelante para $\vec{y}$ y hacia atrás para $\vec{x}$.
 4. Todo el cálculo es genérico en $n$ (1 a 5), reutilizado tanto por el visualizador de 9 ecuaciones (caso particular $n=3$) como por la calculadora.
+
+---
+
+### 4. Comparativa de métodos para EDO: Taylor, Euler Mejorado y RK2 (`/edo`)
+
+> Exposición del Grupo 7 (tema 5, lunes 19/10/2026). Los tres métodos de paso simple se aplican sobre el mismo problema de valor inicial para comparar precisión y costo. Se puede elegir entre tres ecuaciones de la práctica con solución analítica conocida: $y' = 2xy$, $y' = 3x^2y$ y $y' = \tfrac{1}{4}(1+y^2)$.
+
+Guía lateral con 5 secciones: **El problema** (enunciado y solución exacta), **Los métodos** (ordenada genérica, interpretación y orden), **Iteraciones** (sustitución numérica paso a paso de cada método), **Comparativa** (tabla de errores por nodo, gráficos, verificación del orden al achicar $h$ y resumen de los tres problemas) y **Conclusión**.
+
+#### Base matemática
+
+$$
+\text{Taylor: } y_{n+1} = y_n + h\,y_n' + \frac{h^2}{2}\,y_n'' \qquad
+\text{Euler Mejorado: } y_{n+1} = y_n + \frac{h}{2}\left[y_n' + f(x_{n+1}, y_n + h\,y_n')\right]
+$$
+
+$$
+\text{RK2: } y_{n+1} = y_n + h\,f\!\left(x_n + \frac{h}{2},\, y_n + \frac{k_1}{2}\right), \quad k_1 = h\,y_n'
+$$
+
+Los tres son de orden 2 (error global $O(h^2)$). Los cálculos viven en `src/lib/edo.ts` y se verifican contra los ejemplos resueltos del apunte con `npm run test:edo`.
 
 ---
 

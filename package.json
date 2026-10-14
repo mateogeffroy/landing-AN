@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test:crout": "node --test src/lib/crout.test.ts",
-    "test:minimos": "node --test src/lib/minimosCuadrados.test.ts"
+    "test:minimos": "node --test src/lib/minimosCuadrados.test.ts",
+    "test:edo": "node --test src/lib/edo.test.ts"
   },
   "dependencies": {
     "html2canvas": "^1.4.1",

@@ -30,6 +30,14 @@ const projects = [
     link: '/minimos-cuadrados',
     tags: ['Regresión', 'Recharts', 'Residuos'],
   },
+  {
+    numero: '04',
+    title: 'Tercera exposición grupal: Taylor, Euler Mejorado y RK2',
+    description: 'Comparativa de tres métodos de paso simple para problemas de valor inicial sobre ecuaciones de la práctica con solución exacta conocida. Iteraciones paso a paso, tabla de errores en cada nodo, gráficos y verificación del orden de convergencia.',
+    icon: "y'",
+    link: '/edo',
+    tags: ['EDO', 'Valor inicial', 'Recharts'],
+  },
 ];
 
 const integrantes = [

@@ -48,6 +48,7 @@ export default function Header() {
         { href: '/fourier', etiqueta: 'Fourier', ancla: false, activo: pathname.startsWith('/fourier') },
         { href: '/crout', etiqueta: 'Crout', ancla: false, activo: pathname.startsWith('/crout') },
         { href: '/minimos-cuadrados', etiqueta: 'Mínimos cuadrados', ancla: false, activo: pathname.startsWith('/minimos-cuadrados') },
+        { href: '/edo', etiqueta: 'EDO', ancla: false, activo: pathname.startsWith('/edo') },
       ];
 
   return (

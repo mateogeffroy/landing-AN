@@ -218,3 +218,54 @@ export function GraficoComparacion({ series, etiquetaX, etiquetaY, altura = 380 
     </ResponsiveContainer>
   );
 }
+
+// Varias curvas sobre la misma grilla de x (cada fila trae x y un valor por serie).
+export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 340 }: {
+  datos: Record<string, number>[];
+  series: { clave: string; nombre: string; color: string; punteada?: boolean }[];
+  etiquetaX: string;
+  etiquetaY: string;
+  altura?: number;
+}) {
+  const paleta = usarPaleta();
+
+  return (
+    <ResponsiveContainer width="100%" height={altura}>
+      <ComposedChart data={datos} margin={{ top: 10, right: 16, left: 4, bottom: 26 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={paleta.grilla} />
+        <XAxis
+          dataKey="x"
+          type="number"
+          domain={['dataMin', 'dataMax']}
+          tick={paleta.marca}
+          tickFormatter={formatearEje}
+          label={{ value: etiquetaX, position: 'insideBottom', offset: -14, fill: paleta.etiqueta, fontSize: 11 }}
+          {...paleta.eje}
+        />
+        <YAxis
+          tick={paleta.marca}
+          width={58}
+          domain={['auto', 'auto']}
+          tickFormatter={formatearEje}
+          label={{ value: etiquetaY, angle: -90, position: 'insideLeft', fill: paleta.etiqueta, fontSize: 11 }}
+          {...paleta.eje}
+        />
+        <Tooltip contentStyle={paleta.tooltip} formatter={(valor) => Number(valor).toFixed(6)} />
+        <Legend wrapperStyle={{ paddingTop: 16, fontSize: 12 }} />
+        {series.map((serie) => (
+          <Line
+            key={serie.clave}
+            type="monotone"
+            dataKey={serie.clave}
+            name={serie.nombre}
+            stroke={serie.color}
+            strokeWidth={serie.punteada ? 2 : 2.5}
+            strokeDasharray={serie.punteada ? '6 4' : undefined}
+            dot={serie.punteada ? false : { r: 3 }}
+            isAnimationActive={false}
+          />
+        ))}
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
