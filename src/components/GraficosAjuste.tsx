@@ -361,7 +361,7 @@ export function GraficoBarrasSimples({ datos, etiquetaY, sufijo = '', altura = 3
 }
 
 // Varias curvas sobre la misma grilla de x (cada fila trae x y un valor por serie).
-export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 340, marcasX }: {
+export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 340, marcasX, conZoom = false }: {
   datos: Record<string, number>[];
   series: { clave: string; nombre: string; color: string; punteada?: boolean }[];
   etiquetaX: string;
@@ -369,21 +369,29 @@ export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 34
   altura?: number;
   // Marcas fijas del eje X: los nodos x_n, en lugar de los cortes automáticos.
   marcasX?: number[];
+  // Barra inferior para recortar el tramo visible del eje X. Al recortarlo, el
+  // eje Y se reajusta a ese tramo: ahí se separan curvas que a escala completa
+  // se superponen.
+  conZoom?: boolean;
 }) {
   const paleta = usarPaleta();
+  // Tramo elegido con la barra. Las marcas del eje X se recortan al mismo tramo
+  // para no dejar etiquetas fuera del dominio visible.
+  const [ventana, setVentana] = useState({ desde: 0, hasta: datos.length - 1 });
+  const marcasVisibles = marcasX?.slice(ventana.desde, ventana.hasta + 1);
 
   return (
     <ResponsiveContainer width="100%" height={altura}>
-      <ComposedChart data={datos} margin={{ top: 10, right: 16, left: 4, bottom: 26 }}>
+      <ComposedChart data={datos} margin={{ top: 10, right: 16, left: 4, bottom: conZoom ? 52 : 26 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={paleta.grilla} />
         <XAxis
           dataKey="x"
           type="number"
           domain={['dataMin', 'dataMax']}
-          ticks={marcasX}
+          ticks={marcasVisibles}
           tick={paleta.marca}
           tickFormatter={(valor) => Number(valor).toFixed(1)}
-          label={{ value: etiquetaX, position: 'insideBottom', offset: -14, fill: paleta.etiqueta, fontSize: 11 }}
+          label={{ value: etiquetaX, position: 'insideBottom', offset: conZoom ? -42 : -14, fill: paleta.etiqueta, fontSize: 11 }}
           {...paleta.eje}
         />
         <YAxis
@@ -413,6 +421,19 @@ export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 34
             isAnimationActive={false}
           />
         ))}
+        {conZoom && (
+          <Brush
+            dataKey="x"
+            height={26}
+            travellerWidth={10}
+            stroke={paleta.eje.stroke}
+            fill="transparent"
+            tickFormatter={(valor) => Number(valor).toFixed(1)}
+            onChange={({ startIndex, endIndex }) =>
+              setVentana({ desde: startIndex ?? 0, hasta: endIndex ?? datos.length - 1 })
+            }
+          />
+        )}
       </ComposedChart>
     </ResponsiveContainer>
   );

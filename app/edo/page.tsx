@@ -504,10 +504,16 @@ export default function PaginaEDO() {
                 {/* GRÁFICOS */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">Aproximaciones vs. solución exacta</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-1">Aproximaciones vs. solución exacta</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                      Arrastrá los extremos de la barra inferior para acercarte a un tramo: el eje <KaTeX expresionTex="y" /> se
+                      reajusta a ese tramo y se despegan las cuatro curvas.
+                    </p>
                     <GraficoLineas
                       datos={filas}
                       marcasX={nodosX}
+                      conZoom
+                      altura={380}
                       etiquetaX="x"
                       etiquetaY="y"
                       series={[
