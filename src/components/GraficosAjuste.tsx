@@ -361,12 +361,14 @@ export function GraficoBarrasSimples({ datos, etiquetaY, sufijo = '', altura = 3
 }
 
 // Varias curvas sobre la misma grilla de x (cada fila trae x y un valor por serie).
-export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 340 }: {
+export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 340, marcasX }: {
   datos: Record<string, number>[];
   series: { clave: string; nombre: string; color: string; punteada?: boolean }[];
   etiquetaX: string;
   etiquetaY: string;
   altura?: number;
+  // Marcas fijas del eje X: los nodos x_n, en lugar de los cortes automáticos.
+  marcasX?: number[];
 }) {
   const paleta = usarPaleta();
 
@@ -378,8 +380,9 @@ export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 34
           dataKey="x"
           type="number"
           domain={['dataMin', 'dataMax']}
+          ticks={marcasX}
           tick={paleta.marca}
-          tickFormatter={formatearEje}
+          tickFormatter={(valor) => Number(valor).toFixed(1)}
           label={{ value: etiquetaX, position: 'insideBottom', offset: -14, fill: paleta.etiqueta, fontSize: 11 }}
           {...paleta.eje}
         />
@@ -391,7 +394,11 @@ export function GraficoLineas({ datos, series, etiquetaX, etiquetaY, altura = 34
           label={{ value: etiquetaY, angle: -90, position: 'insideLeft', fill: paleta.etiqueta, fontSize: 11 }}
           {...paleta.eje}
         />
-        <Tooltip contentStyle={paleta.tooltip} formatter={(valor) => Number(valor).toFixed(6)} />
+        <Tooltip
+          contentStyle={paleta.tooltip}
+          formatter={(valor) => Number(valor).toFixed(6)}
+          labelFormatter={(valor) => `${etiquetaX} = ${Number(valor).toFixed(1)}`}
+        />
         <Legend wrapperStyle={{ paddingTop: 16, fontSize: 12 }} />
         {series.map((serie) => (
           <Line

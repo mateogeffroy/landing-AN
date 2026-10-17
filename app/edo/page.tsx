@@ -90,25 +90,49 @@ const PASOS_CONVERGENCIA = [0.1, 0.05, 0.025];
 
 const t = (valor: number, decimales = 6) => formatearNumero(valor, decimales);
 
-// Sustitución numérica de una iteración, con la misma forma que el apunte.
-function sustitucionTex(metodo: ClaveMetodo, it: Iteracion, h: number): string[] {
+// Desarrollo de una iteración, renglón por renglón y con el mismo orden que el
+// apunte: primero las pendientes, después la ordenada genérica, después la
+// sustitución y, por último, el resultado.
+function pasosIteracion(metodo: ClaveMetodo, it: Iteracion, p: Problema): { etiqueta: string; tex: string; destacado?: boolean }[] {
   const n = it.n;
+  const h = p.h;
+  const xn = t(it.x, 4);
+  const yn = t(it.y);
   const [a, b, c] = it.intermedios.map((i) => t(i.valor));
+  const resultado = { etiqueta: 'Resultado', tex: `y_{${n + 1}} = ${t(it.siguiente)}`, destacado: true };
+
   if (metodo === 'taylor') {
     return [
-      `y_${n}' = f(${t(it.x, 4)}, \\, ${t(it.y)}) = ${a} \\qquad y_${n}'' = ${b}`,
-      `y_{${n + 1}} = ${t(it.y)} + ${h} \\cdot ${a} + \\frac{(${h})^2}{2} \\cdot ${b} = ${t(it.siguiente)}`,
+      { etiqueta: 'Pendiente', tex: `y_{${n}}' = f(x_{${n}}, \\, y_{${n}}) = f(${xn}, \\, ${yn}) = ${a}` },
+      { etiqueta: 'Curvatura', tex: `y_{${n}}'' = ${p.segundaCortaTex} = ${b}` },
+      { etiqueta: 'Ordenada genérica', tex: `y_{${n + 1}} = y_{${n}} + h \\, y_{${n}}' + \\frac{h^2}{2!} \\, y_{${n}}''` },
+      { etiqueta: 'Sustitución', tex: `y_{${n + 1}} = ${yn} + (${h}) \\cdot ${a} + \\frac{(${h})^2}{2} \\cdot ${b}` },
+      resultado,
     ];
   }
+
   if (metodo === 'eulerMejorado') {
     return [
-      `y_${n}' = ${a} \\qquad y_${n} + h \\, y_${n}' = ${b} \\qquad f(${t(it.x + h, 4)}, \\, ${b}) = ${c}`,
-      `y_{${n + 1}} = ${t(it.y)} + \\frac{${h}}{2} \\left[ ${a} + ${c} \\right] = ${t(it.siguiente)}`,
+      { etiqueta: 'Pendiente inicial', tex: `y_{${n}}' = f(x_{${n}}, \\, y_{${n}}) = f(${xn}, \\, ${yn}) = ${a}` },
+      { etiqueta: 'Predictor (Euler)', tex: `\\bar{y}_{${n + 1}} = y_{${n}} + h \\, y_{${n}}' = ${yn} + (${h}) \\cdot ${a} = ${b}` },
+      { etiqueta: 'Pendiente final', tex: `f(x_{${n + 1}}, \\, \\bar{y}_{${n + 1}}) = f(${t(it.x + h, 4)}, \\, ${b}) = ${c}` },
+      { etiqueta: 'Ordenada genérica', tex: `y_{${n + 1}} = y_{${n}} + \\frac{h}{2} \\left[ y_{${n}}' + f(x_{${n + 1}}, \\, \\bar{y}_{${n + 1}}) \\right]` },
+      { etiqueta: 'Sustitución', tex: `y_{${n + 1}} = ${yn} + \\frac{${h}}{2} \\left[ ${a} + ${c} \\right]` },
+      resultado,
     ];
   }
+
+  const k1 = it.intermedios[0].valor;
+  const xMedio = t(it.x + h / 2, 4);
+  const yMedio = t(it.y + k1 / 2);
   return [
-    `k_1 = ${h} \\cdot f(${t(it.x, 4)}, \\, ${t(it.y)}) = ${a}`,
-    `y_{${n + 1}} = ${t(it.y)} + ${h} \\cdot f(${t(it.x + h / 2, 4)}, \\, ${t(it.y + it.intermedios[0].valor / 2)}) = ${t(it.y)} + ${h} \\cdot ${b} = ${t(it.siguiente)}`,
+    { etiqueta: 'Pendiente inicial', tex: `y_{${n}}' = f(x_{${n}}, \\, y_{${n}}) = f(${xn}, \\, ${yn}) = ${t(k1 / h)}` },
+    { etiqueta: 'Primera etapa', tex: `k_1 = h \\, y_{${n}}' = (${h}) \\cdot ${t(k1 / h)} = ${a}` },
+    { etiqueta: 'Punto medio', tex: `x_{${n}} + \\frac{h}{2} = ${xMedio} \\qquad y_{${n}} + \\frac{k_1}{2} = ${yMedio}` },
+    { etiqueta: 'Pendiente media', tex: `f\\!\\left(x_{${n}} + \\frac{h}{2}, \\; y_{${n}} + \\frac{k_1}{2}\\right) = f(${xMedio}, \\, ${yMedio}) = ${b}` },
+    { etiqueta: 'Ordenada genérica', tex: `y_{${n + 1}} = y_{${n}} + h \\, f\\!\\left(x_{${n}} + \\frac{h}{2}, \\; y_{${n}} + \\frac{k_1}{2}\\right)` },
+    { etiqueta: 'Sustitución', tex: `y_{${n + 1}} = ${yn} + (${h}) \\cdot ${b}` },
+    resultado,
   ];
 }
 
@@ -140,17 +164,10 @@ export default function PaginaEDO() {
     });
   }, [iteraciones, problema]);
 
-  // La exacta se dibuja sobre una grilla fina para que se vea la curva real.
-  const datosCurvas = useMemo(() => {
-    const puntos = 50;
-    const fina = Array.from({ length: puntos + 1 }, (_, i) => {
-      const x = problema.x0 + ((problema.xf - problema.x0) * i) / puntos;
-      return { x, exacta: problema.exacta(x) } as Record<string, number>;
-    });
-    return [...fina, ...filas.map((f) => ({ x: f.x, taylor: f.taylor, eulerMejorado: f.eulerMejorado, rk2: f.rk2 }))].sort((a, b) => a.x - b.x);
-  }, [filas, problema]);
-
   const datosError = filas.map((f) => ({ x: f.x, taylor: f.error_taylor, eulerMejorado: f.error_eulerMejorado, rk2: f.error_rk2 }));
+
+  // Marcas del eje X: los nodos del método, para que el hover caiga sobre ellos.
+  const nodosX = filas.map((f) => f.x);
 
   const ranking = [...METODOS].sort((a, b) => errorFinal(a.clave, problema) - errorFinal(b.clave, problema));
 
@@ -252,8 +269,24 @@ export default function PaginaEDO() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-3">
                       Solución exacta (variables separables)
                     </p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-500 mb-1">
+                      1 · Separar e integrar
+                    </p>
                     <div className="desplazamiento-formula space-y-2 text-slate-800 dark:text-slate-300">
                       {problema.resolucionExactaTex.map((linea) => (
+                        <div key={linea}><KaTeX expresionTex={linea} /></div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-500 mt-4 mb-1">
+                      2 · Hallar <KaTeX expresionTex="C" /> con la condición inicial
+                    </p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 leading-relaxed">
+                      Integrar deja una <strong>familia</strong> de soluciones, una por cada valor de
+                      <KaTeX expresionTex="\; C" />. Se reemplaza la condición inicial en esa solución general y se despeja
+                      <KaTeX expresionTex="\; C" />: es el único valor que hace pasar la curva por el punto dado.
+                    </p>
+                    <div className="desplazamiento-formula space-y-2 text-slate-800 dark:text-slate-300 border-l-2 border-emerald-400/60 dark:border-emerald-500/40 pl-3">
+                      {problema.constanteTex.map((linea) => (
                         <div key={linea}><KaTeX expresionTex={linea} /></div>
                       ))}
                     </div>
@@ -375,17 +408,38 @@ export default function PaginaEDO() {
                   ))}
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {iteraciones[metodo.clave].map((it) => (
-                    <div key={it.n} className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-2">
-                        Iteración n = {it.n} · <KaTeX expresionTex={`x_{${it.n + 1}} = ${t(it.x + problema.h, 4)}`} />
-                      </p>
-                      <div className="desplazamiento-formula space-y-1.5 text-slate-800 dark:text-slate-300 text-sm">
-                        {sustitucionTex(metodo.clave, it, problema.h).map((linea) => (
-                          <div key={linea}><KaTeX expresionTex={linea} /></div>
-                        ))}
+                    <div key={it.n} className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-5">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-3 mb-3 border-b border-slate-200 dark:border-slate-700/50">
+                        <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: metodo.color }}>
+                          Iteración n = {it.n}
+                        </span>
+                        <span className="text-sm text-slate-700 dark:text-slate-400">
+                          <KaTeX expresionTex={`x_{${it.n}} = ${t(it.x, 4)} \\quad y_{${it.n}} = ${t(it.y)} \\quad x_{${it.n + 1}} = ${t(it.x + problema.h, 4)}`} />
+                        </span>
                       </div>
+                      <ol className="space-y-2.5">
+                        {pasosIteracion(metodo.clave, it, problema).map((paso) => (
+                          <li
+                            key={paso.etiqueta}
+                            className={`grid grid-cols-1 md:grid-cols-[10rem_1fr] md:items-baseline gap-x-4 ${
+                              paso.destacado
+                                ? 'rounded-lg border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-950/50 px-3 py-1 mt-1'
+                                : ''
+                            }`}
+                          >
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${paso.destacado ? '' : 'text-slate-500 dark:text-slate-500'}`}
+                              style={paso.destacado ? { color: metodo.color } : undefined}
+                            >
+                              {paso.etiqueta}
+                            </span>
+                            <div className="desplazamiento-formula text-slate-800 dark:text-slate-300 text-sm">
+                              <KaTeX expresionTex={paso.tex} />
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
                     </div>
                   ))}
                 </div>
@@ -452,7 +506,8 @@ export default function PaginaEDO() {
                   <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">Aproximaciones vs. solución exacta</p>
                     <GraficoLineas
-                      datos={datosCurvas}
+                      datos={filas}
+                      marcasX={nodosX}
                       etiquetaX="x"
                       etiquetaY="y"
                       series={[
@@ -465,6 +520,7 @@ export default function PaginaEDO() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500 mb-3">Error absoluto acumulado</p>
                     <GraficoLineas
                       datos={datosError}
+                      marcasX={nodosX}
                       etiquetaX="x"
                       etiquetaY="|y(xₙ) − yₙ|"
                       series={METODOS.map((m) => ({ clave: m.clave, nombre: m.nombre, color: m.color }))}

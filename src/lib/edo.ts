@@ -18,9 +18,14 @@ export interface Problema {
   // Derivada total y'' = f_x + f_y · f, que Taylor necesita de forma analítica.
   segunda: (x: number, y: number) => number;
   segundaTex: string;
+  // Sólo la expresión final de y'', para sustituir en cada iteración de Taylor.
+  segundaCortaTex: string;
   exacta: (x: number) => number;
   exactaTex: string;
+  // Separación de variables e integración, hasta la solución general con C.
   resolucionExactaTex: string[];
+  // Determinación de C con la condición inicial y despeje de la particular.
+  constanteTex: string[];
 }
 
 export interface Iteracion {
@@ -44,12 +49,20 @@ export const PROBLEMAS: Problema[] = [
     f: (x, y) => 2 * x * y,
     segunda: (x, y) => 2 * y + 4 * x * x * y,
     segundaTex: "y'' = f_x + f_y \\cdot y' = 2y + (2x)(2xy) = 2y + 4x^2 y",
+    segundaCortaTex: '2y + 4x^2 y',
     exacta: (x) => Math.exp(x * x - 1),
     exactaTex: 'y(x) = e^{x^2 - 1}',
     resolucionExactaTex: [
+      "y' = \\frac{dy}{dx} = 2xy",
       '\\frac{dy}{y} = 2x \\, dx',
+      '\\int \\frac{dy}{y} = \\int 2x \\, dx',
       '\\ln|y| = x^2 + C',
-      'y(1) = 1 \\;\\Rightarrow\\; C = -1 \\;\\Rightarrow\\; y = e^{x^2 - 1}',
+    ],
+    constanteTex: [
+      'y(1) = 1 \\;\\Longrightarrow\\; \\ln|1| = (1)^2 + C',
+      '0 = 1 + C',
+      'C = -1',
+      '\\ln|y| = x^2 - 1 \\;\\Longrightarrow\\; y = e^{x^2 - 1}',
     ],
   },
   {
@@ -64,12 +77,20 @@ export const PROBLEMAS: Problema[] = [
     f: (x, y) => 3 * x * x * y,
     segunda: (x, y) => 6 * x * y + 9 * x ** 4 * y,
     segundaTex: "y'' = f_x + f_y \\cdot y' = 6xy + (3x^2)(3x^2 y) = 6xy + 9x^4 y",
+    segundaCortaTex: '6xy + 9x^4 y',
     exacta: (x) => 3 * Math.exp(x ** 3),
     exactaTex: 'y(x) = 3 \\, e^{x^3}',
     resolucionExactaTex: [
+      "y' = \\frac{dy}{dx} = 3x^2 y",
       '\\frac{dy}{y} = 3x^2 \\, dx',
+      '\\int \\frac{dy}{y} = \\int 3x^2 \\, dx',
       '\\ln|y| = x^3 + C',
-      'y(0) = 3 \\;\\Rightarrow\\; C = \\ln 3 \\;\\Rightarrow\\; y = 3 \\, e^{x^3}',
+    ],
+    constanteTex: [
+      'y(0) = 3 \\;\\Longrightarrow\\; \\ln|3| = (0)^3 + C',
+      '\\ln 3 = 0 + C',
+      'C = \\ln 3',
+      '\\ln|y| = x^3 + \\ln 3 \\;\\Longrightarrow\\; y = e^{x^3} \\cdot e^{\\ln 3} = 3 \\, e^{x^3}',
     ],
   },
   {
@@ -84,12 +105,20 @@ export const PROBLEMAS: Problema[] = [
     f: (_x, y) => (1 + y * y) / 4,
     segunda: (_x, y) => (y * (1 + y * y)) / 8,
     segundaTex: "y'' = f_x + f_y \\cdot y' = 0 + \\tfrac{y}{2} \\cdot \\tfrac{1}{4}(1 + y^2) = \\tfrac{1}{8} \\, y \\, (1 + y^2)",
+    segundaCortaTex: '\\tfrac{1}{8} \\, y \\, (1 + y^2)',
     exacta: (x) => Math.tan(x / 4 + Math.PI / 4),
     exactaTex: 'y(x) = \\tan\\!\\left(\\tfrac{x}{4} + \\tfrac{\\pi}{4}\\right)',
     resolucionExactaTex: [
+      "y' = \\frac{dy}{dx} = \\tfrac{1}{4}\\left(1 + y^2\\right)",
       '\\frac{dy}{1 + y^2} = \\tfrac{1}{4} \\, dx',
+      '\\int \\frac{dy}{1 + y^2} = \\int \\tfrac{1}{4} \\, dx',
       '\\arctan(y) = \\tfrac{x}{4} + C',
-      'y(0) = 1 \\;\\Rightarrow\\; C = \\tfrac{\\pi}{4} \\;\\Rightarrow\\; y = \\tan\\!\\left(\\tfrac{x}{4} + \\tfrac{\\pi}{4}\\right)',
+    ],
+    constanteTex: [
+      'y(0) = 1 \\;\\Longrightarrow\\; \\arctan(1) = \\tfrac{0}{4} + C',
+      '\\tfrac{\\pi}{4} = 0 + C',
+      'C = \\tfrac{\\pi}{4}',
+      '\\arctan(y) = \\tfrac{x}{4} + \\tfrac{\\pi}{4} \\;\\Longrightarrow\\; y = \\tan\\!\\left(\\tfrac{x}{4} + \\tfrac{\\pi}{4}\\right)',
     ],
   },
 ];
